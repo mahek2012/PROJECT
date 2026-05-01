@@ -8,21 +8,65 @@ import { toggleWishlist } from '../redux/slices/wishlistSlice';
 import { toast } from 'react-toastify';
 import Skeleton from 'react-loading-skeleton';
 import { motion } from 'framer-motion';
+import axiosInstance from '../services/api/axiosInstance';
 
 const ProductDetail = () => {
   const { id } = useParams();
   const dispatch = useDispatch();
   const { product, isLoading, error } = useSelector((state) => state.products);
   const { items: wishlistItems } = useSelector((state) => state.wishlist);
+  const { user, token } = useSelector((state) => state.auth);
+  const isAuthenticated = !!token;
   const [quantity, setQuantity] = useState(1);
   const [activeImage, setActiveImage] = useState(0);
+
+  // Review states
+  const [reviews, setReviews] = useState([]);
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewComment, setReviewComment] = useState('');
+  const [isSubmittingReview, setIsSubmittingReview] = useState(false);
 
   const isWishlisted = wishlistItems.some((item) => item.id === product?.id);
 
   useEffect(() => {
     dispatch(fetchProductById(id));
+    fetchReviews();
     return () => dispatch(clearProduct());
   }, [dispatch, id]);
+
+  const fetchReviews = async () => {
+    try {
+      const res = await axiosInstance.get(`/products/${id}/reviews`);
+      if (res.data?.success) {
+        setReviews(res.data.reviews);
+      }
+    } catch (err) {
+      console.error('Failed to fetch reviews', err);
+    }
+  };
+
+  const handleReviewSubmit = async (e) => {
+    e.preventDefault();
+    if (!isAuthenticated) {
+      toast.error('Please login to submit a review');
+      return;
+    }
+    setIsSubmittingReview(true);
+    try {
+      await axiosInstance.post(`/products/${id}/reviews`, {
+        rating: reviewRating,
+        comment: reviewComment
+      });
+      toast.success('Review submitted! It will appear once approved by an Admin.');
+      setReviewComment('');
+      setReviewRating(5);
+      fetchReviews(); // refresh
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to submit review');
+    } finally {
+      setIsSubmittingReview(false);
+    }
+  };
 
   const handleAddToCart = () => {
     dispatch(addToCart({ ...product, quantity }));
@@ -220,6 +264,100 @@ const ProductDetail = () => {
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+
+        {/* Reviews Section */}
+        <div className="mt-20 border-t border-gray-100 pt-16">
+          <div className="flex flex-col lg:flex-row gap-16">
+            
+            {/* Review List */}
+            <div className="lg:w-2/3">
+              <h3 className="text-3xl font-black text-gray-900 mb-8">Customer Reviews</h3>
+              {reviews.length === 0 ? (
+                <div className="text-gray-500 font-medium py-8">No reviews yet. Be the first to review this product!</div>
+              ) : (
+                <div className="space-y-8">
+                  {reviews.map(review => (
+                    <div key={review._id} className="bg-gray-50 p-6 rounded-[2rem]">
+                      <div className="flex items-center gap-4 mb-4">
+                        <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center text-orange-600 font-bold text-lg">
+                          {review.userId?.fullname?.charAt(0).toUpperCase() || 'U'}
+                        </div>
+                        <div>
+                          <h4 className="font-bold text-gray-900">{review.userId?.fullname || 'Unknown User'}</h4>
+                          <div className="flex text-yellow-400 mt-1">
+                            {[...Array(5)].map((_, i) => (
+                              <Star key={i} size={14} fill={i < review.rating ? 'currentColor' : 'none'} />
+                            ))}
+                          </div>
+                        </div>
+                        <span className="ml-auto text-sm text-gray-400 font-medium">
+                          {new Date(review.createdAt).toLocaleDateString()}
+                        </span>
+                      </div>
+                      <p className="text-gray-600 leading-relaxed pl-16">
+                        {review.comment}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Write a Review */}
+            <div className="lg:w-1/3">
+              <div className="bg-white border border-gray-100 p-8 rounded-[2rem] shadow-xl shadow-gray-100">
+                <h3 className="text-2xl font-black text-gray-900 mb-6">Write a Review</h3>
+                <form onSubmit={handleReviewSubmit} className="space-y-6">
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">Rating</label>
+                    <div className="flex gap-2">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <button
+                          type="button"
+                          key={star}
+                          onClick={() => setReviewRating(star)}
+                          className={`p-2 rounded-xl transition-all ${
+                            star <= reviewRating ? 'text-yellow-400 bg-yellow-50' : 'text-gray-300 hover:text-yellow-400 hover:bg-gray-50'
+                          }`}
+                        >
+                          <Star size={24} fill={star <= reviewRating ? 'currentColor' : 'none'} />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">Your Review</label>
+                    <textarea 
+                      required
+                      rows="4"
+                      value={reviewComment}
+                      onChange={(e) => setReviewComment(e.target.value)}
+                      placeholder="What did you like or dislike?"
+                      className="w-full bg-gray-50 border border-gray-200 rounded-2xl p-4 focus:ring-2 focus:ring-orange-500 outline-none text-gray-700 font-medium resize-none"
+                    ></textarea>
+                  </div>
+                  {isAuthenticated ? (
+                    <button 
+                      type="submit" 
+                      disabled={isSubmittingReview}
+                      className="w-full btn-primary py-4 rounded-xl font-bold"
+                    >
+                      {isSubmittingReview ? 'Submitting...' : 'Submit Review'}
+                    </button>
+                  ) : (
+                    <Link 
+                      to="/login"
+                      className="w-full btn-primary py-4 rounded-xl font-bold flex justify-center items-center"
+                    >
+                      Login to Review
+                    </Link>
+                  )}
+                </form>
+              </div>
+            </div>
+
           </div>
         </div>
       </div>

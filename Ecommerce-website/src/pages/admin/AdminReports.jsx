@@ -195,10 +195,10 @@ const AdminReports = () => {
               stats.topProducts.map((product, i) => (
                 <div key={i} className="flex items-center gap-4 p-4 rounded-2xl hover:bg-gray-50 transition-colors border border-transparent hover:border-gray-100">
                   <div className="w-16 h-16 rounded-xl bg-gray-100 overflow-hidden shrink-0">
-                    <img src={product.image} alt={product.title} className="w-full h-full object-cover mix-blend-multiply" />
+                    <img src={product.images?.[0] || 'https://placehold.co/400x400?text=No+Image'} alt={product.name} className="w-full h-full object-cover mix-blend-multiply" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h4 className="font-bold text-gray-900 text-sm truncate">{product.title}</h4>
+                    <h4 className="font-bold text-gray-900 text-sm truncate">{product.name}</h4>
                     <p className="text-xs text-gray-500 font-medium truncate">{product.category}</p>
                   </div>
                   <div className="text-right shrink-0">

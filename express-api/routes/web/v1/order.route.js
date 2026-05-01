@@ -25,6 +25,7 @@ router.put("/admin/:orderId", userMiddleware.authUser, adminMiddleware.authAdmin
 
 
 // Cancel Order
+router.put("/:id/cancel", userMiddleware.authUser, orderController.CancelOrder);
 
 
 

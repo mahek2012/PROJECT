@@ -10,6 +10,7 @@ const Home = lazy(() => import('./pages/Home'));
 const Login = lazy(() => import('./pages/Login'));
 const Register = lazy(() => import('./pages/Register'));
 const ProductList = lazy(() => import('./pages/ProductList'));
+const CategoryPage = lazy(() => import('./pages/CategoryPage'));
 const ProductDetail = lazy(() => import('./pages/ProductDetail'));
 const Cart = lazy(() => import('./pages/Cart'));
 const Wishlist = lazy(() => import('./pages/Wishlist'));
@@ -17,6 +18,14 @@ const Checkout = lazy(() => import('./pages/Checkout'));
 const OrderConfirmation = lazy(() => import('./pages/OrderConfirmation'));
 const Profile = lazy(() => import('./pages/Profile'));
 const OrderHistory = lazy(() => import('./pages/OrderHistory'));
+const Offers = lazy(() => import('./pages/Offers'));
+const Contact = lazy(() => import('./pages/Contact'));
+const TrackOrder = lazy(() => import('./pages/TrackOrder'));
+const ShippingPolicy = lazy(() => import('./pages/ShippingPolicy'));
+const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
+const FAQ = lazy(() => import('./pages/FAQ'));
+const About = lazy(() => import('./pages/About'));
+const FlashSale = lazy(() => import('./pages/FlashSale'));
 const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
 const AdminProducts = lazy(() => import('./pages/admin/AdminProducts'));
 const AdminOrders = lazy(() => import('./pages/admin/AdminOrders'));
@@ -40,8 +49,17 @@ function App() {
           <Route path="login" element={<Login />} />
           <Route path="register" element={<Register />} />
           <Route path="products" element={<ProductList />} />
+          <Route path="category/:categoryName" element={<CategoryPage />} />
           <Route path="product/:id" element={<ProductDetail />} />
           <Route path="cart" element={<Cart />} />
+          <Route path="offers" element={<Offers />} />
+          <Route path="contact" element={<Contact />} />
+          <Route path="track-order" element={<TrackOrder />} />
+          <Route path="shipping-policy" element={<ShippingPolicy />} />
+          <Route path="privacy-policy" element={<PrivacyPolicy />} />
+          <Route path="faq" element={<FAQ />} />
+          <Route path="about" element={<About />} />
+          <Route path="flash-sale" element={<FlashSale />} />
           
           {/* Protected Routes */}
           <Route element={<ProtectedRoute />}>

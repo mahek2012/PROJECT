@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useSearchParams } from 'react-router-dom';
-import { Filter, SlidersHorizontal, ChevronDown, LayoutGrid, List, Search as SearchIcon, X } from 'lucide-react';
+import { Filter, SlidersHorizontal, ChevronDown, LayoutGrid, List, Search as SearchIcon, X, Star } from 'lucide-react';
 import { fetchProducts, fetchCategories } from '../redux/slices/productSlice';
 import ProductCard from '../components/product/ProductCard';
 import Skeleton from 'react-loading-skeleton';
@@ -18,6 +18,8 @@ const ProductList = () => {
   const currentCategory = searchParams.get('category') || 'All';
   const currentSort = searchParams.get('sort') || 'newest';
   const searchQuery = searchParams.get('search') || '';
+  const maxPrice = searchParams.get('maxPrice') || 500000;
+  const rating = searchParams.get('rating') || 0;
 
   useEffect(() => {
     dispatch(fetchCategories());
@@ -42,9 +44,63 @@ const ProductList = () => {
     setSearchParams({ ...Object.fromEntries(searchParams), sort });
   };
 
+  const handleFilterChange = (key, value) => {
+    setSearchParams({ ...Object.fromEntries(searchParams), [key]: value, page: 1 });
+  };
+
   const clearFilters = () => {
     setSearchParams({});
   };
+
+  let displayedProducts = [...products];
+
+  // Filter by category
+  if (currentCategory !== 'All') {
+    displayedProducts = displayedProducts.filter(p => p.category?.toLowerCase() === currentCategory.toLowerCase());
+  }
+
+  // Filter by search query
+  if (searchQuery) {
+    const q = searchQuery.toLowerCase();
+    displayedProducts = displayedProducts.filter(p => 
+      p.name?.toLowerCase().includes(q) || 
+      p.description?.toLowerCase().includes(q) ||
+      p.brand?.toLowerCase().includes(q) ||
+      p.category?.toLowerCase().includes(q)
+    );
+  }
+
+  // Filter by price
+  if (maxPrice) {
+    displayedProducts = displayedProducts.filter(p => {
+      const actualPrice = p.discount ? p.price - (p.price * p.discount / 100) : p.price;
+      return actualPrice <= Number(maxPrice);
+    });
+  }
+
+  // Filter by rating
+  if (rating > 0) {
+    displayedProducts = displayedProducts.filter(p => p.rating >= Number(rating));
+  }
+
+  // Sort
+  if (currentSort === 'price-low') {
+    displayedProducts.sort((a, b) => {
+      const priceA = a.discount ? a.price - (a.price * a.discount / 100) : a.price;
+      const priceB = b.discount ? b.price - (b.price * b.discount / 100) : b.price;
+      return priceA - priceB;
+    });
+  } else if (currentSort === 'price-high') {
+    displayedProducts.sort((a, b) => {
+      const priceA = a.discount ? a.price - (a.price * a.discount / 100) : a.price;
+      const priceB = b.discount ? b.price - (b.price * b.discount / 100) : b.price;
+      return priceB - priceA;
+    });
+  } else if (currentSort === 'rating') {
+    displayedProducts.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+  } else {
+    displayedProducts.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+  }
 
   return (
     <div className="bg-gray-50 min-h-screen py-10">
@@ -55,7 +111,7 @@ const ProductList = () => {
             {currentCategory === 'All' ? 'All Products' : currentCategory}
             {searchQuery && <span className="text-gray-400 font-medium"> - Search results for "{searchQuery}"</span>}
           </h1>
-          <p className="text-gray-500 mt-1">Showing {products.length} products</p>
+          <p className="text-gray-500 mt-1">Showing {displayedProducts.length} products</p>
         </div>
 
         <div className="flex flex-col lg:flex-row gap-8">
@@ -89,10 +145,18 @@ const ProductList = () => {
             <div>
               <h3 className="text-sm font-bold uppercase tracking-wider text-gray-900 mb-4">Price Range</h3>
               <div className="space-y-4">
-                <input type="range" className="w-full accent-orange-600" min="0" max="5000" />
+                <input 
+                  type="range" 
+                  className="w-full accent-orange-600" 
+                  min="0" 
+                  max="500000" 
+                  step="1000"
+                  value={maxPrice}
+                  onChange={(e) => handleFilterChange('maxPrice', e.target.value)}
+                />
                 <div className="flex items-center justify-between text-sm text-gray-600 font-medium">
-                  <span>$0</span>
-                  <span>$5,000+</span>
+                  <span>₹0</span>
+                  <span>₹{maxPrice}</span>
                 </div>
               </div>
             </div>
@@ -100,10 +164,23 @@ const ProductList = () => {
             <div>
               <h3 className="text-sm font-bold uppercase tracking-wider text-gray-900 mb-4">Customer Rating</h3>
               <div className="space-y-2">
-                {[4, 3, 2, 1].map((rating) => (
-                  <label key={rating} className="flex items-center gap-3 cursor-pointer group">
-                    <input type="checkbox" className="w-4 h-4 rounded text-orange-600 focus:ring-orange-500 border-gray-300" />
-                    <span className="text-sm text-gray-600 group-hover:text-gray-900">{rating} Stars & Up</span>
+                {[4, 3, 2, 1].map((r) => (
+                  <label key={r} className="flex items-center gap-3 cursor-pointer group">
+                    <input 
+                      type="radio" 
+                      name="rating"
+                      checked={Number(rating) === r}
+                      onChange={() => handleFilterChange('rating', r)}
+                      className="w-4 h-4 text-orange-600 focus:ring-orange-500 border-gray-300" 
+                    />
+                    <span className="text-sm text-gray-600 group-hover:text-gray-900 flex items-center gap-1">
+                      <div className="flex">
+                        {[...Array(5)].map((_, i) => (
+                          <Star key={i} size={14} className={i < r ? "text-yellow-400 fill-yellow-400" : "text-gray-300"} />
+                        ))}
+                      </div>
+                      <span className="ml-1 font-bold">& Up</span>
+                    </span>
                   </label>
                 ))}
               </div>
@@ -164,10 +241,10 @@ const ProductList = () => {
                   </div>
                 ))}
               </div>
-            ) : products.length > 0 ? (
+            ) : displayedProducts.length > 0 ? (
               <div className={viewMode === 'grid' ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8' : 'space-y-6'}>
-                {products.map((product) => (
-                  <ProductCard key={product.id} product={product} />
+                {displayedProducts.map((product) => (
+                  <ProductCard key={product.id} product={product} viewMode={viewMode} />
                 ))}
               </div>
             ) : (

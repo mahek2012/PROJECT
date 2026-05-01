@@ -1,5 +1,6 @@
 const productService = require("../services/product.service");
 const productModel = require("../models/product.model");
+const reviewModel = require("../models/review.model");
 
 // add new products
 module.exports.createProduct = async (req, res) => {
@@ -172,5 +173,40 @@ module.exports.deleteProduct = async (req, res) => {
     return res.status(200).json({ message: "Product Deleted Successfully" });
   } catch (error) {
     return res.status(400).json({ message: error.message });
+  }
+};
+
+// add review
+module.exports.addReview = async (req, res) => {
+  try {
+    const { rating, comment } = req.body;
+    const productId = req.params.id;
+    const userId = req.user._id;
+
+    if (!rating || !comment) {
+      return res.status(400).json({ message: "Rating and comment are required." });
+    }
+
+    const review = await reviewModel.create({
+      userId,
+      productId,
+      rating: Number(rating),
+      comment
+    });
+
+    return res.status(201).json({ success: true, message: "Review added successfully", review });
+  } catch (error) {
+    return res.status(400).json({ success: false, message: error.message });
+  }
+};
+
+// get product reviews
+module.exports.getProductReviews = async (req, res) => {
+  try {
+    const productId = req.params.id;
+    const reviews = await reviewModel.find({ productId, isApproved: true }).populate('userId', 'fullname email profilePic').sort({ createdAt: -1 });
+    return res.status(200).json({ success: true, reviews });
+  } catch (error) {
+    return res.status(400).json({ success: false, message: error.message });
   }
 };

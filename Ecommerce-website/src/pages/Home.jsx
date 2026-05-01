@@ -14,29 +14,65 @@ import {
   Heart
 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import axiosInstance from '../services/api/axiosInstance';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchProducts } from '../redux/slices/productSlice';
+import ProductCard from '../components/product/ProductCard';
 
 const Home = () => {
-  const categories = [
-    { name: 'Electronics', icon: '💻', color: 'bg-white' },
-    { name: 'Fashion', icon: '👕', color: 'bg-white' },
-    { name: 'Mobile & Accessories', icon: '📱', color: 'bg-white' },
-    { name: 'Groceries', icon: '🛒', color: 'bg-white' },
-    { name: 'Gaming', icon: '🎮', color: 'bg-white' },
-    { name: 'Books', icon: '📚', color: 'bg-white' },
-    { name: 'Home & Decor', icon: '🏠', color: 'bg-white' },
-    { name: 'Beauty', icon: '💄', color: 'bg-white' },
-    { name: 'Accessories', icon: '⌚', color: 'bg-white' },
-    { name: 'Sports', icon: '🏀', color: 'bg-white' },
-  ];
-
+  const [categories, setCategories] = useState([]);
   const [activeTab, setActiveTab] = useState('All');
+  
+  // Newsletter State
+  const [email, setEmail] = useState('');
+  const [subscribeStatus, setSubscribeStatus] = useState('idle'); // idle, loading, success, error
+  const [subscribeMessage, setSubscribeMessage] = useState('');
 
-  const products = [
-    { id: 1, name: 'Premium Wireless Headphones', price: 299, img: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&q=80&w=400' },
-    { id: 2, name: 'Smart Fitness Watch', price: 199, img: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&q=80&w=400' },
-    { id: 3, name: 'Classic Leather Bag', price: 159, img: 'https://images.unsplash.com/photo-1547949003-9792a18a2601?auto=format&fit=crop&q=80&w=400' },
-    { id: 4, name: 'Minimalist Ceramic Vase', price: 45, img: 'https://images.unsplash.com/photo-1581783898377-1c85bf937427?auto=format&fit=crop&q=80&w=400' },
-  ];
+  const dispatch = useDispatch();
+  const { products } = useSelector((state) => state.products);
+
+  useEffect(() => {
+    dispatch(fetchProducts());
+    
+    const fetchCategories = async () => {
+      try {
+        const response = await axiosInstance.get('/category/all');
+        if (response.data.success) {
+          setCategories(response.data.categories);
+        }
+      } catch (error) {
+        console.error('Failed to fetch categories:', error);
+      }
+    };
+    fetchCategories();
+  }, [dispatch]);
+
+  // The products are now fetched from Redux
+  const featuredProducts = activeTab === 'All' 
+    ? products 
+    : products.filter(p => p.category?.toLowerCase() === activeTab.toLowerCase());
+
+  const displayFeaturedProducts = featuredProducts.slice(0, 4);
+
+  const handleSubscribe = async (e) => {
+    e.preventDefault();
+    if (!email) return;
+
+    setSubscribeStatus('loading');
+    setSubscribeMessage('');
+
+    try {
+      const response = await axiosInstance.post('/newsletter/subscribe', { email });
+      if (response.data.success) {
+        setSubscribeStatus('success');
+        setSubscribeMessage(response.data.message || 'Successfully Subscribed! 🎁 You got 10% OFF - Check your email.');
+        setEmail('');
+      }
+    } catch (error) {
+      setSubscribeStatus('error');
+      setSubscribeMessage(error.response?.data?.message || 'Something went wrong. Please try again.');
+    }
+  };
 
   return (
     <div className="bg-[#f8f9fa]">
@@ -114,13 +150,24 @@ const Home = () => {
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
-            {categories.map((cat, i) => (
-              <div key={i} className="bg-white p-8 rounded-2xl border border-gray-100 text-center hover:shadow-xl transition-all cursor-pointer group shadow-sm">
-                <div className="text-4xl mb-4 group-hover:scale-110 transition-transform">{cat.icon}</div>
-                <h3 className="font-bold text-gray-900 text-sm mb-1">{cat.name}</h3>
-                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">1.2k+ Products</p>
-              </div>
-            ))}
+            {categories.slice(0, 10).map((cat, i) => {
+              const categorySlug = encodeURIComponent(cat.name);
+              return (
+                <Link to={`/category/${categorySlug}`} key={i} className="bg-white p-8 rounded-2xl border border-gray-100 text-center hover:shadow-xl transition-all cursor-pointer group shadow-sm flex flex-col items-center justify-center">
+                  <div className="w-20 h-20 mb-4 group-hover:scale-110 transition-transform overflow-hidden rounded-2xl flex items-center justify-center bg-gray-50">
+                    {cat.image ? (
+                      <img src={cat.image} alt={cat.name} className="w-full h-full object-cover" />
+                    ) : cat.icon ? (
+                      <img src={cat.icon} alt={cat.name} className="w-10 h-10 object-contain" />
+                    ) : (
+                      <span className="text-3xl">📁</span>
+                    )}
+                  </div>
+                  <h3 className="font-bold text-gray-900 text-sm mb-1">{cat.name}</h3>
+                  <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Products</p>
+                </Link>
+              );
+            })}
           </div>
         </div>
       </section>
@@ -139,31 +186,8 @@ const Home = () => {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-            {[
-              { id: 101, name: 'Ultra-Quiet Noise Cancelling Headphones', price: 349, rating: 5, img: 'https://images.unsplash.com/photo-1546435770-a3e426ff4737?auto=format&fit=crop&q=80&w=400' },
-              { id: 102, name: 'Smart OLED Television 55"', price: 899, rating: 4, img: 'https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?auto=format&fit=crop&q=80&w=400' },
-              { id: 103, name: 'Ergonomic Wireless Mouse', price: 79, rating: 5, img: 'https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?auto=format&fit=crop&q=80&w=400' },
-              { id: 104, name: 'Portable Bluetooth Speaker', price: 129, rating: 4, img: 'https://images.unsplash.com/photo-1608156639585-34052e81c99f?auto=format&fit=crop&q=80&w=400' },
-            ].map((p) => (
-              <div key={p.id} className="bg-white p-4 rounded-3xl border border-gray-100 group hover:shadow-2xl transition-all duration-500 shadow-sm">
-                <div className="aspect-square rounded-2xl overflow-hidden mb-5 relative bg-gray-50">
-                  <img src={p.img} alt={p.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
-                  <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-md px-3 py-1 rounded-full flex items-center gap-1 shadow-sm">
-                    <Star size={12} className="text-yellow-500 fill-yellow-500" />
-                    <span className="text-[10px] font-black text-gray-900">{p.rating}.0</span>
-                  </div>
-                  <button className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                    <span className="bg-white text-gray-900 px-6 py-2 rounded-xl font-bold text-sm translate-y-4 group-hover:translate-y-0 transition-transform">Add to Cart</span>
-                  </button>
-                </div>
-                <h3 className="font-bold text-gray-900 text-sm mb-2 line-clamp-1">{p.name}</h3>
-                <div className="flex items-center justify-between">
-                  <span className="text-lg font-black text-orange-500">${p.price}</span>
-                  <button className="text-gray-400 hover:text-red-500 transition-colors">
-                    <Heart size={18} />
-                  </button>
-                </div>
-              </div>
+            {products.slice(0, 4).map((p) => (
+              <ProductCard key={p.id} product={p} />
             ))}
           </div>
         </div>
@@ -191,22 +215,15 @@ const Home = () => {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
-            {products.map((product) => (
-              <div key={product.id} className="group">
-                <div className="aspect-square bg-gray-50 rounded-2xl overflow-hidden mb-4 relative">
-                  <img src={product.img} alt={product.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-                  <button className="absolute bottom-4 right-4 bg-white p-3 rounded-xl shadow-lg opacity-0 group-hover:opacity-100 transition-all translate-y-2 group-hover:translate-y-0">
-                    <ShoppingBag size={20} className="text-gray-900" />
-                  </button>
-                </div>
-                <h3 className="font-bold text-gray-900 mb-1">{product.name}</h3>
-                <div className="flex items-center gap-2">
-                  <span className="text-orange-500 font-black">${product.price}.00</span>
-
-                  <span className="text-gray-400 text-sm line-through font-medium">${product.price + 100}.00</span>
-                </div>
+            {displayFeaturedProducts.length > 0 ? (
+              displayFeaturedProducts.map((p) => (
+                <ProductCard key={p.id} product={p} />
+              ))
+            ) : (
+              <div className="col-span-full py-10 text-center text-gray-500 font-medium">
+                No products found in this category.
               </div>
-            ))}
+            )}
           </div>
 
           <div className="text-center">
@@ -224,9 +241,9 @@ const Home = () => {
             <div className="p-12 md:p-16 flex-1 text-white">
               <h2 className="text-5xl font-black mb-4">Limited Time Offer!</h2>
               <p className="text-xl font-bold opacity-90 mb-8">Get up to <span className="text-white text-3xl">50% OFF</span> on selected electronics <br />and accessories. Offer valid till Sunday.</p>
-              <button className="bg-white text-orange-500 px-10 py-4 rounded-xl font-black shadow-xl hover:scale-105 transition-all">
+              <Link to="/offers" className="inline-block bg-white text-orange-500 px-10 py-4 rounded-xl font-black shadow-xl hover:scale-105 transition-all">
                 Grab The Deal
-              </button>
+              </Link>
             </div>
             <div className="flex-1 p-10 flex justify-center items-center">
               <img
@@ -307,16 +324,47 @@ const Home = () => {
               Subscribe to our newsletter and get 10% off your first order. Plus, be the first to know about new drops and limited edition collections.
             </p>
 
-            <form className="flex flex-col sm:flex-row gap-4 max-w-2xl mx-auto bg-white/5 p-2 rounded-[2rem] border border-white/10 backdrop-blur-sm">
+            <form onSubmit={handleSubscribe} className="flex flex-col sm:flex-row gap-4 max-w-2xl mx-auto bg-white/5 p-2 rounded-[2rem] border border-white/10 backdrop-blur-sm">
               <input
                 type="email"
+                required
                 placeholder="yourname@example.com"
-                className="flex-1 bg-transparent border-none px-8 py-4 text-white focus:outline-none placeholder:text-gray-500 font-medium"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                disabled={subscribeStatus === 'loading' || subscribeStatus === 'success'}
+                className="flex-1 bg-transparent border-none px-8 py-4 text-white focus:outline-none placeholder:text-gray-500 font-medium disabled:opacity-50"
               />
-              <button className="bg-orange-500 hover:bg-orange-600 text-white px-10 py-4 rounded-[1.5rem] font-black transition-all flex items-center justify-center gap-2 group">
-                Subscribe <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
+              <button 
+                type="submit"
+                disabled={subscribeStatus === 'loading' || subscribeStatus === 'success'}
+                className={`px-10 py-4 rounded-[1.5rem] font-black transition-all flex items-center justify-center gap-2 group ${
+                  subscribeStatus === 'success' 
+                    ? 'bg-green-500 text-white cursor-default'
+                    : 'bg-orange-500 hover:bg-orange-600 text-white disabled:bg-orange-500/50'
+                }`}
+              >
+                {subscribeStatus === 'loading' ? (
+                  <><div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> Subscribing...</>
+                ) : subscribeStatus === 'success' ? (
+                  <>Subscribed ✔</>
+                ) : (
+                  <>Subscribe <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" /></>
+                )}
               </button>
             </form>
+
+            {/* Status Messages */}
+            {subscribeMessage && (
+              <motion.div 
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className={`mt-6 inline-block px-6 py-3 rounded-xl font-bold text-sm shadow-lg ${
+                  subscribeStatus === 'success' ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'
+                }`}
+              >
+                {subscribeMessage}
+              </motion.div>
+            )}
 
             <p className="text-gray-500 text-xs mt-8 font-medium italic">
               * By subscribing, you agree to our Privacy Policy and Terms of Service.

@@ -56,4 +56,16 @@ router.delete(
   productController.deleteProduct,
 );
 
+// reviews
+router.get(
+  "/:id/reviews",
+  productController.getProductReviews
+);
+
+router.post(
+  "/:id/reviews",
+  userMiddleware.authUser,
+  productController.addReview
+);
+
 module.exports = router;

@@ -110,7 +110,17 @@ const productSlice = createSlice({
       })
       .addCase(fetchProductById.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.product = action.payload;
+        const rawProduct = action.payload?.product || action.payload;
+        if (rawProduct) {
+          state.product = {
+            ...rawProduct,
+            id: rawProduct._id || rawProduct.id,
+            image: rawProduct.images?.[0] || 'https://placehold.co/400x400?text=No+Image',
+            isNew: rawProduct.isNewproduct
+          };
+        } else {
+          state.product = null;
+        }
       })
       .addCase(fetchProductById.rejected, (state, action) => {
         state.isLoading = false;

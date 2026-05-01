@@ -13,8 +13,8 @@ const cartRouter = require("./routes/web/v1/cart.route");
 const orderRouter = require("./routes/web/v1/order.route");
 const wishlistRouter = require("./routes/web/v1/wishlist.route");
 const categoryRouter = require("./routes/category.routes");
-
-
+const newsletterRouter = require("./routes/web/v1/newsletter.route");
+const offerRouter = require("./routes/web/v1/offer.route");
 const app = express();
 
 app.use(express.json());
@@ -42,8 +42,8 @@ app.use("/cart", cartRouter);
 app.use("/orders", orderRouter);
 app.use("/wishlist", wishlistRouter);
 app.use("/category", categoryRouter);
-
-
+app.use("/newsletter", newsletterRouter);
+app.use("/offers", offerRouter);
 app.listen(PORT, () => {
   console.log(`✅ server is Running on PORT ${PORT}`);
 });

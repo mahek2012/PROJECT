@@ -41,7 +41,9 @@ const Checkout = () => {
     if (placeOrder.fulfilled.match(result)) {
       dispatch(clearCart());
       toast.success('Order placed successfully!');
-      navigate('/order-confirmation', { state: { orderId: result.payload.id || 'ORD-' + Math.floor(Math.random() * 1000000) } });
+      navigate('/order-confirmation', { state: { orderId: result.payload.order?._id || 'ORD-' + Math.floor(Math.random() * 1000000) } });
+    } else {
+      toast.error(result.payload || 'Failed to place order. Please try again.');
     }
   };
 

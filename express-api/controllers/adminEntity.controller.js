@@ -97,11 +97,10 @@ exports.getStats = async (req, res) => {
       users: item.users
     }));
 
-    // Top Products (Assuming we don't have direct sales count in Product, we'll sort by rating/stock for mock if needed, or aggregate from Orders. But since Order has products array, we can unwind it. Let's do a simple aggregate if possible, or just fetch top rated products as Top Products for now)
+    // Top Products
     const topProducts = await Product.find()
-      .sort({ "rating.rate": -1 }) // Sorting by rating for now as proxy for top
       .limit(5)
-      .select("title price category image rating");
+      .select("name price category images");
 
     // Category Performance
     const categoryPerformance = await Product.aggregate([

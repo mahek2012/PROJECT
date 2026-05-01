@@ -127,10 +127,7 @@ const AdminLayout = () => {
               />
             </div>
             
-            <button className="relative p-2 text-gray-500 hover:bg-gray-100 rounded-lg transition-all">
-              <Bell size={22} />
-              <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
-            </button>
+
 
             <div className="w-px h-8 bg-gray-100"></div>
 

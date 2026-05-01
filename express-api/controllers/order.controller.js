@@ -4,9 +4,9 @@ const orderService = require("../services/order.service");
 module.exports.CreateOrder = async (req, res) => {
   try {
     const userId = req.user.id;
-    const { items } = req.body;
+    const { items, shippingAddress, paymentMethod } = req.body;
 
-    const order = await orderService.CreateOrder({ userId, items });
+    const order = await orderService.CreateOrder({ userId, items, shippingAddress, paymentMethod });
 
     if (!order) {
       return res.status(404).json("Products not Found");
@@ -56,6 +56,18 @@ module.exports.UpdateOrder = async (req, res) => {
     return res.status(200).json({ success: true, message: "Order updated", order });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// Cancel Order
+module.exports.CancelOrder = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { id } = req.params;
+    const order = await orderService.CancelOrder(id, userId);
+    return res.status(200).json({ success: true, message: "Order cancelled successfully", order });
+  } catch (error) {
+    return res.status(400).json({ success: false, message: error.message });
   }
 };
 

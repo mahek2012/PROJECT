@@ -14,7 +14,7 @@ const Footer = () => {
   return (
     <footer className="bg-[#111827] text-white pt-20 pb-10">
       <div className="container-custom">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-12 mb-16">
           {/* Brand Info */}
           <div className="space-y-6">
             <Link to="/" className="flex items-center gap-2">
@@ -25,15 +25,22 @@ const Footer = () => {
                 SHOP<span className="text-[#ff6b01]">VERSE</span>
               </span>
             </Link>
-            <p className="text-gray-400 text-sm leading-relaxed">
+            <p className="text-gray-400 text-sm leading-relaxed max-w-sm">
               Your one-stop destination for premium electronics, fashion, and lifestyle products. Quality guaranteed since 2024.
             </p>
             <div className="flex gap-4">
-              {[Globe, Share2, MessageSquare, Link2].map((Icon, i) => (
-                <a key={i} href="#" className="w-10 h-10 bg-white/5 hover:bg-[#ff6b01] rounded-full flex items-center justify-center transition-all">
-                  <Icon size={18} />
-                </a>
-              ))}
+              <a href="#" className="w-10 h-10 bg-white/5 hover:bg-[#ff6b01] rounded-full flex items-center justify-center transition-all">
+                <Globe size={18} />
+              </a>
+              <a href="#" className="w-10 h-10 bg-white/5 hover:bg-[#ff6b01] rounded-full flex items-center justify-center transition-all">
+                <Share2 size={18} />
+              </a>
+              <a href="mailto:support@shopverse.com" className="w-10 h-10 bg-white/5 hover:bg-[#ff6b01] rounded-full flex items-center justify-center transition-all">
+                <MessageSquare size={18} />
+              </a>
+              <a href="#" className="w-10 h-10 bg-white/5 hover:bg-[#ff6b01] rounded-full flex items-center justify-center transition-all">
+                <Link2 size={18} />
+              </a>
             </div>
           </div>
 
@@ -41,11 +48,11 @@ const Footer = () => {
           <div>
             <h4 className="text-sm font-black uppercase tracking-widest mb-8 text-[#ff6b01]">Quick Links</h4>
             <ul className="space-y-4">
-              {['All Products', 'Electronics', 'Fashion', 'View Cart', 'Wishlist'].map((link) => (
-                <li key={link}>
-                  <Link to="/products" className="text-gray-400 hover:text-white text-sm font-bold transition-colors">{link}</Link>
-                </li>
-              ))}
+              <li><Link to="/products" className="text-gray-400 hover:text-white text-sm font-bold transition-colors">All Products</Link></li>
+              <li><Link to="/category/Electronics" className="text-gray-400 hover:text-white text-sm font-bold transition-colors">Electronics</Link></li>
+              <li><Link to="/category/Fashion" className="text-gray-400 hover:text-white text-sm font-bold transition-colors">Fashion</Link></li>
+              <li><Link to="/cart" className="text-gray-400 hover:text-white text-sm font-bold transition-colors">View Cart</Link></li>
+              <li><Link to="/wishlist" className="text-gray-400 hover:text-white text-sm font-bold transition-colors">Wishlist</Link></li>
             </ul>
           </div>
 
@@ -53,32 +60,11 @@ const Footer = () => {
           <div>
             <h4 className="text-sm font-black uppercase tracking-widest mb-8 text-[#ff6b01]">Customer Service</h4>
             <ul className="space-y-4">
-              {['My Account', 'Track Orders', 'Shipping Policy', 'Privacy Policy', 'FAQ'].map((link) => (
-                <li key={link}>
-                  <Link to="/profile" className="text-gray-400 hover:text-white text-sm font-bold transition-colors">{link}</Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Contact Us */}
-          <div>
-            <h4 className="text-sm font-black uppercase tracking-widest mb-8 text-[#ff6b01]">Contact Us</h4>
-            <ul className="space-y-6">
-              <li className="flex items-start gap-4">
-                <MapPin className="text-[#ff6b01] shrink-0" size={20} />
-                <span className="text-gray-400 text-sm font-bold leading-relaxed">
-                  123 Tech Street, Silicon Valley, CA, 94043, USA
-                </span>
-              </li>
-              <li className="flex items-center gap-4">
-                <Phone className="text-[#ff6b01] shrink-0" size={20} />
-                <span className="text-gray-400 text-sm font-bold">+1 (888) 000-1234</span>
-              </li>
-              <li className="flex items-center gap-4">
-                <Mail className="text-[#ff6b01] shrink-0" size={20} />
-                <span className="text-gray-400 text-sm font-bold">support@shopverse.com</span>
-              </li>
+              <li><Link to="/profile" className="text-gray-400 hover:text-white text-sm font-bold transition-colors">My Account</Link></li>
+              <li><Link to="/track-order" className="text-gray-400 hover:text-white text-sm font-bold transition-colors">Track Orders</Link></li>
+              <li><Link to="/shipping-policy" className="text-gray-400 hover:text-white text-sm font-bold transition-colors">Shipping Policy</Link></li>
+              <li><Link to="/privacy-policy" className="text-gray-400 hover:text-white text-sm font-bold transition-colors">Privacy Policy</Link></li>
+              <li><Link to="/faq" className="text-gray-400 hover:text-white text-sm font-bold transition-colors">FAQ</Link></li>
             </ul>
           </div>
         </div>

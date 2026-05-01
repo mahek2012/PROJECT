@@ -44,6 +44,15 @@ export const updateOrderStatus = createAsyncThunk('orders/updateStatus', async (
   }
 });
 
+export const cancelOrder = createAsyncThunk('orders/cancelOrder', async (orderId, thunkAPI) => {
+  try {
+    const response = await axiosInstance.put(`/orders/${orderId}/cancel`);
+    return response.data.order;
+  } catch (error) {
+    return thunkAPI.rejectWithValue(error.response?.data?.message || 'Failed to cancel order');
+  }
+});
+
 
 const orderSlice = createSlice({
   name: 'orders',
@@ -89,6 +98,12 @@ const orderSlice = createSlice({
         state.error = action.payload;
       })
       .addCase(updateOrderStatus.fulfilled, (state, action) => {
+        const index = state.orders.findIndex(o => o._id === action.payload._id);
+        if (index !== -1) {
+          state.orders[index] = action.payload;
+        }
+      })
+      .addCase(cancelOrder.fulfilled, (state, action) => {
         const index = state.orders.findIndex(o => o._id === action.payload._id);
         if (index !== -1) {
           state.orders[index] = action.payload;

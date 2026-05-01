@@ -31,7 +31,7 @@ const Navbar = () => {
     { name: 'Home', path: '/' },
     { name: 'Shop', path: '/products' },
     { name: 'Categories', path: '#', hasDropdown: true },
-    { name: 'Deals / Offer', path: '/products?deal=true' },
+    { name: 'Deals / Offer', path: '/offers' },
     { name: 'About Us', path: '/about' },
     { name: 'Contact', path: '/contact' },
   ];
@@ -168,7 +168,7 @@ const Navbar = () => {
                   {categories.map((cat) => (
                     <Link 
                       key={cat}
-                      to={`/products?category=${cat.toLowerCase().replace(/ & /g, '-').replace(/ /g, '-')}`}
+                      to={`/category/${encodeURIComponent(cat)}`}
                       className="block px-6 py-2.5 text-xs font-bold text-gray-600 hover:text-[#ff6b01] hover:bg-orange-50 transition-all"
                     >
                       {cat}

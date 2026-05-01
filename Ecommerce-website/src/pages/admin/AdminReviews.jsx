@@ -138,11 +138,11 @@ const AdminReviews = () => {
                     <div className="space-y-1">
                       <div className="flex items-center gap-2 text-sm font-black text-gray-900">
                         <User size={14} className="text-gray-400" />
-                        User ID: {r.userId?.slice(-6).toUpperCase()}
+                        User ID: {(r.userId || '').slice(-6).toUpperCase()}
                       </div>
                       <div className="flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-widest">
                         <Box size={12} />
-                        Prod: {r.productId?.slice(-6).toUpperCase()}
+                        Prod: {(r.productId || '').slice(-6).toUpperCase()}
                       </div>
                     </div>
                   </td>

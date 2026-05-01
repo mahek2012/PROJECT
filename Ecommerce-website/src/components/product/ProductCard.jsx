@@ -6,7 +6,7 @@ import { toggleWishlist } from '../../redux/slices/wishlistSlice';
 import { toast } from 'react-toastify';
 import { motion } from 'framer-motion';
 
-const ProductCard = ({ product }) => {
+const ProductCard = ({ product, viewMode = 'grid' }) => {
   const dispatch = useDispatch();
   const { items: wishlistItems } = useSelector((state) => state.wishlist);
   const isWishlisted = wishlistItems.some((item) => item.id === product.id);
@@ -34,9 +34,9 @@ const ProductCard = ({ product }) => {
   return (
     <motion.div 
       whileHover={{ y: -5 }}
-      className="card group"
+      className={`card group ${viewMode === 'list' ? 'flex flex-row overflow-hidden' : ''}`}
     >
-      <Link to={`/product/${product.id}`} className="block relative aspect-square overflow-hidden bg-gray-100">
+      <Link to={`/product/${product.id}`} className={`block relative bg-gray-100 ${viewMode === 'list' ? 'w-48 sm:w-64 shrink-0' : 'aspect-square overflow-hidden'}`}>
         <img
           src={product.image || 'https://via.placeholder.com/300'}
           alt={product.name}
@@ -80,7 +80,7 @@ const ProductCard = ({ product }) => {
         </div>
       </Link>
 
-      <div className="p-4">
+      <div className={`p-4 ${viewMode === 'list' ? 'flex flex-col justify-center flex-1' : ''}`}>
         <p className="text-xs text-gray-500 font-medium uppercase tracking-wider mb-1">
           {product.category || 'Category'}
         </p>
@@ -105,6 +105,18 @@ const ProductCard = ({ product }) => {
             <span className="text-sm text-gray-400 line-through">${product.oldPrice}</span>
           )}
         </div>
+        
+        {viewMode === 'list' && (
+          <div className="mt-4 hidden sm:block">
+            <p className="text-sm text-gray-600 line-clamp-2">{product.description || 'No description available for this product.'}</p>
+            <button
+              onClick={handleAddToCart}
+              className="mt-4 bg-orange-600 text-white font-bold py-2 px-6 rounded-lg flex items-center justify-center gap-2 hover:bg-orange-700 transition-colors"
+            >
+              <ShoppingCart size={18} /> Add to Cart
+            </button>
+          </div>
+        )}
       </div>
     </motion.div>
   );
