@@ -3,19 +3,20 @@ import { useParams, Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { ShoppingCart, Heart, Star, ChevronRight, Truck, ShieldCheck, RotateCcw, Minus, Plus, Share2, Check } from 'lucide-react';
 import { fetchProductById, clearProduct } from '../redux/slices/productSlice';
-import { addToCart } from '../redux/slices/cartSlice';
-import { toggleWishlist } from '../redux/slices/wishlistSlice';
 import { toast } from 'react-toastify';
 import Skeleton from 'react-loading-skeleton';
 import { motion } from 'framer-motion';
 import axiosInstance from '../services/api/axiosInstance';
+import { addItemToCart } from '../redux/slices/cartSlice';
+import { addToWishlist, removeFromWishlist } from '../redux/slices/wishlistSlice';
 
 const ProductDetail = () => {
   const { id } = useParams();
   const dispatch = useDispatch();
-  const { product, isLoading, error } = useSelector((state) => state.products);
+  const { product, isLoading } = useSelector((state) => state.products);
+
   const { items: wishlistItems } = useSelector((state) => state.wishlist);
-  const { user, token } = useSelector((state) => state.auth);
+  const { token } = useSelector((state) => state.auth);
   const isAuthenticated = !!token;
   const [quantity, setQuantity] = useState(1);
   const [activeImage, setActiveImage] = useState(0);
@@ -26,7 +27,7 @@ const ProductDetail = () => {
   const [reviewComment, setReviewComment] = useState('');
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
 
-  const isWishlisted = wishlistItems.some((item) => item.id === product?.id);
+  const isWishlisted = wishlistItems.some((item) => item.id === product?._id || item.productId === product?._id);
 
   useEffect(() => {
     dispatch(fetchProductById(id));
@@ -69,14 +70,28 @@ const ProductDetail = () => {
   };
 
   const handleAddToCart = () => {
-    dispatch(addToCart({ ...product, quantity }));
+    if (!isAuthenticated) {
+      toast.error('Please login to add items to cart');
+      return;
+    }
+    dispatch(addItemToCart({ productId: product._id, quantity }));
     toast.success(`${product.name} added to cart!`);
   };
 
   const handleWishlist = () => {
-    dispatch(toggleWishlist(product));
-    toast.info(isWishlisted ? 'Removed from wishlist' : 'Added to wishlist');
+    if (!isAuthenticated) {
+      toast.error('Please login to manage wishlist');
+      return;
+    }
+    if (isWishlisted) {
+      dispatch(removeFromWishlist(product._id));
+      toast.info('Removed from wishlist');
+    } else {
+      dispatch(addToWishlist(product._id));
+      toast.success('Added to wishlist');
+    }
   };
+
 
   if (isLoading) {
     return (
@@ -119,26 +134,25 @@ const ProductDetail = () => {
           {/* Image Gallery */}
           <div className="lg:w-1/2">
             <div className="sticky top-28 space-y-6">
-              <motion.div 
-                layoutId={`product-image-${product.id}`}
+              <motion.div
+                layoutId={`product-image-${product._id}`}
                 className="aspect-square bg-gray-100 rounded-3xl overflow-hidden border border-gray-100"
               >
-                <img 
-                  src={images[activeImage]} 
-                  alt={product.name} 
+                <img
+                  src={images[activeImage]}
+                  alt={product.name}
                   className="w-full h-full object-cover transition-transform duration-700 hover:scale-110"
                 />
               </motion.div>
-              
+
               {images.length > 1 && (
                 <div className="flex gap-4 overflow-x-auto pb-2">
                   {images.map((img, idx) => (
                     <button
                       key={idx}
                       onClick={() => setActiveImage(idx)}
-                      className={`w-24 h-24 rounded-xl overflow-hidden border-2 shrink-0 transition-all ${
-                        activeImage === idx ? 'border-orange-600 shadow-lg' : 'border-transparent opacity-60 hover:opacity-100'
-                      }`}
+                      className={`w-24 h-24 rounded-xl overflow-hidden border-2 shrink-0 transition-all ${activeImage === idx ? 'border-orange-600 shadow-lg' : 'border-transparent opacity-60 hover:opacity-100'
+                        }`}
                     >
                       <img src={img} alt="" className="w-full h-full object-cover" />
                     </button>
@@ -156,7 +170,7 @@ const ProductDetail = () => {
                   {product.category}
                 </span>
                 <h1 className="text-4xl lg:text-5xl font-extrabold text-gray-900 leading-tight mb-4">{product.name}</h1>
-                
+
                 <div className="flex items-center gap-6">
                   <div className="flex items-center gap-2">
                     <div className="flex text-yellow-400">
@@ -208,14 +222,14 @@ const ProductDetail = () => {
                 <div className="flex items-center gap-10">
                   <span className="font-bold text-gray-900 uppercase tracking-wider text-sm">Quantity</span>
                   <div className="flex items-center bg-gray-100 rounded-xl p-1">
-                    <button 
+                    <button
                       onClick={() => setQuantity(Math.max(1, quantity - 1))}
                       className="w-10 h-10 flex items-center justify-center text-gray-500 hover:text-orange-600 hover:bg-white rounded-lg transition-all"
                     >
                       <Minus size={20} />
                     </button>
                     <span className="w-12 text-center font-extrabold text-gray-900 text-lg">{quantity}</span>
-                    <button 
+                    <button
                       onClick={() => setQuantity(quantity + 1)}
                       className="w-10 h-10 flex items-center justify-center text-gray-500 hover:text-orange-600 hover:bg-white rounded-lg transition-all"
                     >
@@ -225,17 +239,16 @@ const ProductDetail = () => {
                 </div>
 
                 <div className="flex gap-4">
-                  <button 
+                  <button
                     onClick={handleAddToCart}
                     className="flex-1 btn-primary py-5 rounded-2xl flex items-center justify-center gap-3 text-xl shadow-xl shadow-orange-200"
                   >
                     <ShoppingCart size={24} /> Add to Cart
                   </button>
-                  <button 
+                  <button
                     onClick={handleWishlist}
-                    className={`w-16 rounded-2xl flex items-center justify-center border-2 transition-all ${
-                      isWishlisted ? 'bg-red-50 border-red-500 text-red-500 shadow-lg' : 'border-gray-200 text-gray-400 hover:border-red-500 hover:text-red-500'
-                    }`}
+                    className={`w-16 rounded-2xl flex items-center justify-center border-2 transition-all ${isWishlisted ? 'bg-red-50 border-red-500 text-red-500 shadow-lg' : 'border-gray-200 text-gray-400 hover:border-red-500 hover:text-red-500'
+                      }`}
                   >
                     <Heart size={28} fill={isWishlisted ? 'currentColor' : 'none'} />
                   </button>
@@ -270,7 +283,7 @@ const ProductDetail = () => {
         {/* Reviews Section */}
         <div className="mt-20 border-t border-gray-100 pt-16">
           <div className="flex flex-col lg:flex-row gap-16">
-            
+
             {/* Review List */}
             <div className="lg:w-2/3">
               <h3 className="text-3xl font-black text-gray-900 mb-8">Customer Reviews</h3>
@@ -318,9 +331,8 @@ const ProductDetail = () => {
                           type="button"
                           key={star}
                           onClick={() => setReviewRating(star)}
-                          className={`p-2 rounded-xl transition-all ${
-                            star <= reviewRating ? 'text-yellow-400 bg-yellow-50' : 'text-gray-300 hover:text-yellow-400 hover:bg-gray-50'
-                          }`}
+                          className={`p-2 rounded-xl transition-all ${star <= reviewRating ? 'text-yellow-400 bg-yellow-50' : 'text-gray-300 hover:text-yellow-400 hover:bg-gray-50'
+                            }`}
                         >
                           <Star size={24} fill={star <= reviewRating ? 'currentColor' : 'none'} />
                         </button>
@@ -329,7 +341,7 @@ const ProductDetail = () => {
                   </div>
                   <div>
                     <label className="block text-sm font-bold text-gray-700 mb-2">Your Review</label>
-                    <textarea 
+                    <textarea
                       required
                       rows="4"
                       value={reviewComment}
@@ -339,15 +351,15 @@ const ProductDetail = () => {
                     ></textarea>
                   </div>
                   {isAuthenticated ? (
-                    <button 
-                      type="submit" 
+                    <button
+                      type="submit"
                       disabled={isSubmittingReview}
                       className="w-full btn-primary py-4 rounded-xl font-bold"
                     >
                       {isSubmittingReview ? 'Submitting...' : 'Submit Review'}
                     </button>
                   ) : (
-                    <Link 
+                    <Link
                       to="/login"
                       className="w-full btn-primary py-4 rounded-xl font-bold flex justify-center items-center"
                     >

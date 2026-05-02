@@ -8,6 +8,9 @@ const Shipping = require("../models/shipping.model");
 const User = require("../models/user.model");
 const Order = require("../models/order.model");
 const Product = require("../models/product.model");
+const ShippingRule = require("../models/shippingRule.model");
+const PaymentMethod = require("../models/paymentMethod.model");
+
 
 // Generic CRUD handlers
 const getAll = (Model) => async (req, res) => {
@@ -45,6 +48,69 @@ const remove = (Model) => async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
+const getAllPayments = async (req, res) => {
+  try {
+    // 1. Find all orders
+    const allOrders = await Order.find().lean();
+    
+    // 2. Find all existing payments to see what's missing
+    const existingPayments = await Payment.find().lean();
+    const orderIdsWithPayments = new Set(
+      existingPayments
+        .filter(p => p.orderId)
+        .map(p => p.orderId.toString())
+    );
+
+    // 3. Create missing payment records for existing orders (Data Healing)
+    const missingPayments = allOrders.filter(order => !orderIdsWithPayments.has(order._id.toString()));
+    
+    if (missingPayments.length > 0) {
+      console.log(`[Healing] Found ${missingPayments.length} orders without payment records.`);
+      const paymentPromises = missingPayments.map(order => {
+        const method = (order.paymentMethod || "cod").toLowerCase();
+        const cleanMethod = method.includes("card") ? "card" : method.includes("upi") ? "upi" : "cod";
+        
+        return Payment.create({
+          orderId: order._id,
+          userId: order.userId,
+          amount: order.totalbill || 0,
+          method: cleanMethod,
+          status: cleanMethod === "cod" ? "pending" : "completed",
+          transactionId: "TXN-OLD-" + order._id.toString().slice(-6).toUpperCase()
+        });
+      });
+      await Promise.all(paymentPromises);
+      console.log(`[Healing] Successfully created missing records.`);
+    }
+
+    // 4. Now fetch the full populated list
+    const data = await Payment.find()
+      .populate("userId", "fullName username email")
+      .populate("orderId")
+      .sort({ createdAt: -1 });
+
+      
+    res.status(200).json({ success: true, data });
+  } catch (error) {
+    console.error("FATAL ERROR in getAllPayments:", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+
+
+const getAllShipping = async (req, res) => {
+  try {
+    const data = await Shipping.find()
+      .populate("orderId")
+      .sort({ createdAt: -1 });
+    res.status(200).json({ success: true, data });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 
 // Specialized handlers
 exports.getStats = async (req, res) => {
@@ -143,5 +209,9 @@ exports.reviews = { getAll: getAll(Review), create: create(Review), update: upda
 exports.offers = { getAll: getAll(Offer), create: create(Offer), update: update(Offer), delete: remove(Offer) };
 exports.notifications = { getAll: getAll(Notification), create: create(Notification), update: update(Notification), delete: remove(Notification) };
 exports.settings = { getAll: getAll(Setting), create: create(Setting), update: update(Setting), delete: remove(Setting) };
-exports.payments = { getAll: getAll(Payment), create: create(Payment), update: update(Payment), delete: remove(Payment) };
-exports.shipping = { getAll: getAll(Shipping), create: create(Shipping), update: update(Shipping), delete: remove(Shipping) };
+exports.payments = { getAll: getAllPayments, create: create(Payment), update: update(Payment), delete: remove(Payment) };
+exports.shipping = { getAll: getAllShipping, create: create(Shipping), update: update(Shipping), delete: remove(Shipping) };
+exports.shippingRules = { getAll: getAll(ShippingRule), create: create(ShippingRule), update: update(ShippingRule), delete: remove(ShippingRule) };
+exports.paymentMethods = { getAll: getAll(PaymentMethod), create: create(PaymentMethod), update: update(PaymentMethod), delete: remove(PaymentMethod) };
+
+

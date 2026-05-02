@@ -1,7 +1,7 @@
 import { useSelector, useDispatch } from 'react-redux';
 import { Link, useNavigate } from 'react-router-dom';
 import { Trash2, Minus, Plus, ShoppingBag, ArrowRight, ChevronLeft, CreditCard, Truck, ShieldCheck } from 'lucide-react';
-import { updateQuantity, removeFromCart, clearCart } from '../redux/slices/cartSlice';
+import { updateCartItemQuantity, removeItemFromCart, clearCart } from '../redux/slices/cartSlice';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const Cart = () => {
@@ -11,8 +11,9 @@ const Cart = () => {
 
   const handleQuantityChange = (id, newQuantity) => {
     if (newQuantity < 1) return;
-    dispatch(updateQuantity({ id, quantity: newQuantity }));
+    dispatch(updateCartItemQuantity({ productId: id, quantity: newQuantity }));
   };
+
 
   const shipping = totalAmount > 500 ? 0 : 50;
   const tax = totalAmount * 0.1; // 10% tax
@@ -75,11 +76,12 @@ const Cart = () => {
                         </Link>
                       </div>
                       <button 
-                        onClick={() => dispatch(removeFromCart(item.id))}
+                        onClick={() => dispatch(removeItemFromCart(item.id))}
                         className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
                       >
                         <Trash2 size={20} />
                       </button>
+
                     </div>
                     
                     <div className="flex items-center justify-between mt-6">

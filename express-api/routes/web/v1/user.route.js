@@ -36,11 +36,22 @@ router.post(
 // show profile
 router.get("/profile", middleware.authUser, userController.profile);
 
+// get profile stats
+router.get("/stats", middleware.authUser, userController.getProfileStats);
+
+
 // logout profile
 router.get("/logout", middleware.authUser, userController.logout)
 
 // update profile
-router.put("/update", middleware.authUser, userController.updateUser)
+router.put("/update", middleware.authUser, userController.updateProfile)
+
+// address management
+router.post("/addresses", middleware.authUser, userController.manageAddresses)
+
+// upgrade membership
+router.post("/upgrade", middleware.authUser, userController.upgradeMembership)
+
 
 // forget password
 router.post("/forget-password", userController.forgetPassword)

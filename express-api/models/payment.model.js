@@ -29,7 +29,11 @@ const paymentSchema = mongoose.Schema(
     transactionId: {
       type: String,
     },
+    refundReason: {
+      type: String,
+    },
   },
+
   { timestamps: true }
 );
 

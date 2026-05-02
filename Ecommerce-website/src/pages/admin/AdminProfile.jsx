@@ -1,17 +1,22 @@
 import { useState } from 'react';
 import { useSelector } from 'react-redux';
-import { User, Mail, Lock, Shield, Save, Key, AlertCircle } from 'lucide-react';
+import { User, Mail, Lock, Shield, Save, Key, AlertCircle, Camera } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { toast } from 'react-toastify';
+import axiosInstance from '../../services/api/axiosInstance';
+import { useDispatch } from 'react-redux';
+import { updateUser } from '../../redux/slices/authSlice';
 
 const AdminProfile = () => {
   const { user } = useSelector((state) => state.auth);
+  const dispatch = useDispatch();
   const [formData, setFormData] = useState({
     currentPassword: '',
     newPassword: '',
     confirmPassword: ''
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -31,6 +36,28 @@ const AdminProfile = () => {
     }, 1500);
   };
 
+  const handlePhotoUpload = async (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        setIsUploading(true);
+        try {
+          const response = await axiosInstance.put('/auth/update', { profilePhoto: reader.result });
+          if (response.data.success) {
+            dispatch(updateUser(response.data.user));
+            toast.success('Admin photo updated!');
+          }
+        } catch (err) {
+          toast.error('Failed to upload photo');
+        } finally {
+          setIsUploading(false);
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   return (
     <div className="max-w-4xl mx-auto">
       <div className="mb-10">
@@ -43,10 +70,32 @@ const AdminProfile = () => {
         <div className="space-y-6">
           <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-gray-100 text-center">
             <div className="relative inline-block mb-6">
-              <div className="w-32 h-32 bg-orange-600 rounded-3xl flex items-center justify-center text-white text-4xl font-black shadow-xl rotate-3 hover:rotate-0 transition-transform duration-300">
-                {user?.username?.charAt(0).toUpperCase() || 'A'}
+              <div 
+                onClick={() => document.getElementById('admin-photo-upload').click()}
+                className="w-32 h-32 bg-orange-600 rounded-3xl flex items-center justify-center text-white text-4xl font-black shadow-xl rotate-3 hover:rotate-0 transition-transform duration-300 overflow-hidden cursor-pointer group relative"
+              >
+                {isUploading ? (
+                  <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-10">
+                    <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  </div>
+                ) : null}
+                {user?.profilePhoto ? (
+                  <img src={user.profilePhoto} className="w-full h-full object-cover" />
+                ) : (
+                  user?.username?.charAt(0).toUpperCase() || 'A'
+                )}
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                  <Camera className="text-white" size={24} />
+                </div>
               </div>
-              <div className="absolute -bottom-2 -right-2 bg-green-500 text-white p-2 rounded-xl border-4 border-white shadow-lg">
+              <input 
+                id="admin-photo-upload" 
+                type="file" 
+                accept="image/*" 
+                className="hidden" 
+                onChange={handlePhotoUpload} 
+              />
+              <div className="absolute -bottom-2 -right-2 bg-green-500 text-white p-2 rounded-xl border-4 border-white shadow-lg z-20">
                 <Shield size={16} />
               </div>
             </div>
@@ -64,6 +113,7 @@ const AdminProfile = () => {
               </div>
             </div>
           </div>
+
 
           <div className="bg-gray-900 p-8 rounded-[2rem] text-white overflow-hidden relative">
             <div className="relative z-10">

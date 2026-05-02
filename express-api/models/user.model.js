@@ -30,6 +30,40 @@ let userSchema = mongoose.Schema({
       type: String,
       enum: ["active", "blocked"],
       default: "active",
+    },
+    fullName: {
+      type: String,
+      default: ""
+    },
+    phone: {
+      type: String,
+      default: ""
+    },
+    profilePhoto: {
+      type: String,
+      default: "https://cdn-icons-png.flaticon.com/512/149/149071.png"
+    },
+    preferences: {
+      emailNotifications: { type: Boolean, default: true },
+      smsAlerts: { type: Boolean, default: false }
+    },
+    addresses: [
+      {
+        fullName: String,
+        phone: String,
+        street: String,
+        city: String,
+        state: String,
+        zipCode: String,
+        country: String,
+        addressType: { type: String, enum: ["Home", "Office", "Other"], default: "Home" },
+        isDefault: { type: Boolean, default: false }
+      }
+    ],
+    membership: {
+      plan: { type: String, enum: ["Free", "Pro", "Premium"], default: "Free" },
+      startDate: { type: Date, default: Date.now },
+      expiryDate: Date
     }
 
 });

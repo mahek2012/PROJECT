@@ -1,24 +1,35 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { ShoppingCart, Heart, User, Search, Menu, X, LogOut, ChevronDown, LayoutDashboard } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { logout } from '../../redux/slices/authSlice';
+import { fetchCart } from '../../redux/slices/cartSlice';
+import { fetchWishlist } from '../../redux/slices/wishlistSlice';
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isCategoriesOpen, setIsCategoriesOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const { user } = useSelector((state) => state.auth);
+  const { user, token } = useSelector((state) => state.auth);
   const { totalQuantity } = useSelector((state) => state.cart);
   const { items: wishlistItems } = useSelector((state) => state.wishlist);
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
+  useEffect(() => {
+    if (token) {
+      dispatch(fetchCart());
+      dispatch(fetchWishlist());
+    }
+  }, [dispatch, token]);
+
+
   const handleLogout = () => {
     dispatch(logout());
     navigate('/login');
   };
+
 
   const handleSearch = (e) => {
     e.preventDefault();

@@ -136,9 +136,14 @@ const AdminLayout = () => {
                 <p className="text-sm font-bold text-gray-900 group-hover:text-orange-600 transition-colors">{user?.role === 'admin' ? 'Admin' : user?.username}</p>
                 <p className="text-[10px] text-orange-600 font-black uppercase tracking-widest leading-none">Control Center</p>
               </div>
-              <div className="w-10 h-10 bg-orange-600 rounded-xl flex items-center justify-center text-white font-black shadow-lg shadow-orange-100 group-hover:scale-105 transition-transform">
-                {user?.username?.charAt(0).toUpperCase() || 'A'}
+              <div className="w-10 h-10 bg-orange-600 rounded-xl flex items-center justify-center text-white font-black shadow-lg shadow-orange-100 group-hover:scale-105 transition-transform overflow-hidden">
+                {user?.profilePhoto ? (
+                  <img src={user.profilePhoto} className="w-full h-full object-cover" />
+                ) : (
+                  user?.username?.charAt(0).toUpperCase() || 'A'
+                )}
               </div>
+
             </Link>
           </div>
         </header>

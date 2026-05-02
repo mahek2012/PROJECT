@@ -25,8 +25,8 @@ const shippingSchema = mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["preparing", "shipped", "out_for_delivery", "delivered", "returned"],
-      default: "preparing",
+      enum: ["pending", "packed", "shipped", "out_for_delivery", "delivered", "cancelled"],
+      default: "pending",
     },
     estimatedDelivery: {
       type: Date,

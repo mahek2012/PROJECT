@@ -3,7 +3,8 @@ const orderService = require("../services/order.service");
 // create order
 module.exports.CreateOrder = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user._id;
+
     const { items, shippingAddress, paymentMethod } = req.body;
 
     const order = await orderService.CreateOrder({ userId, items, shippingAddress, paymentMethod });
@@ -23,7 +24,8 @@ module.exports.CreateOrder = async (req, res) => {
 // get order deatils and show order stauts
 module.exports.GetOrder = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user._id;
+
 
     const order = await orderService.GetOrder(userId);
 
@@ -62,7 +64,8 @@ module.exports.UpdateOrder = async (req, res) => {
 // Cancel Order
 module.exports.CancelOrder = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user._id;
+
     const { id } = req.params;
     const order = await orderService.CancelOrder(id, userId);
     return res.status(200).json({ success: true, message: "Order cancelled successfully", order });

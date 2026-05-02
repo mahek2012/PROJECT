@@ -60,5 +60,18 @@ router.post("/shipping", adminAuth, adminEntityController.shipping.create);
 router.put("/shipping/:id", adminAuth, adminEntityController.shipping.update);
 router.delete("/shipping/:id", adminAuth, adminEntityController.shipping.delete);
 
+// Shipping Rules
+router.get("/shipping-rules", adminAuth, adminEntityController.shippingRules.getAll);
+router.post("/shipping-rules", adminAuth, adminEntityController.shippingRules.create);
+router.put("/shipping-rules/:id", adminAuth, adminEntityController.shippingRules.update);
+router.delete("/shipping-rules/:id", adminAuth, adminEntityController.shippingRules.delete);
+
+// Payment Methods
+router.get("/payment-methods", adminAuth, adminEntityController.paymentMethods.getAll);
+router.post("/payment-methods", adminAuth, adminEntityController.paymentMethods.create);
+router.put("/payment-methods/:id", adminAuth, adminEntityController.paymentMethods.update);
+router.delete("/payment-methods/:id", adminAuth, adminEntityController.paymentMethods.delete);
+
+
 module.exports = router;
 

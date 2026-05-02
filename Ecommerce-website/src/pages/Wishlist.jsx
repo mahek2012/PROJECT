@@ -2,7 +2,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { Link } from 'react-router-dom';
 import { Heart, ShoppingCart, Trash2, ArrowRight, ShoppingBag, ChevronLeft } from 'lucide-react';
 import { removeFromWishlist } from '../redux/slices/wishlistSlice';
-import { addToCart } from '../redux/slices/cartSlice';
+import { addItemToCart } from '../redux/slices/cartSlice';
 import { toast } from 'react-toastify';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -11,10 +11,11 @@ const Wishlist = () => {
   const dispatch = useDispatch();
 
   const handleMoveToCart = (product) => {
-    dispatch(addToCart(product));
-    dispatch(removeFromWishlist(product.id));
+    dispatch(addItemToCart({ productId: product.id || product.productId, quantity: 1 }));
+    dispatch(removeFromWishlist(product.id || product.productId));
     toast.success('Moved to cart!');
   };
+
 
   if (items.length === 0) {
     return (

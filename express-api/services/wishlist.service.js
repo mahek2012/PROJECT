@@ -1,12 +1,22 @@
 const wishlistModel = require("../models/wishlist.model")
 
 // add items into wishlist
-module.exports.AddToWishlist =async ({userId, item}) =>{
+module.exports.AddToWishlist = async ({ userId, productId }) => {
+  let wishlistItem = await wishlistModel.findOne({ userId, productId });
 
-    let wishlist = await wishlistModel.findOne({userId});
+  if (!wishlistItem) {
+    wishlistItem = new wishlistModel({ userId, productId });
+    return await wishlistItem.save();
+  }
+  return wishlistItem;
+};
 
-    if(!wishlist) wishlist = new wishlistModel({userId, productIds: []})
+// get wishlist
+module.exports.GetWishlist = async (userId) => {
+  return await wishlistModel.find({ userId }).populate("productId");
+};
 
-    wishlist.productIds.push(item)
-    return await wishlist.save();
-}
+// remove from wishlist
+module.exports.RemoveFromWishlist = async ({ userId, productId }) => {
+  return await wishlistModel.findOneAndDelete({ userId, productId });
+};

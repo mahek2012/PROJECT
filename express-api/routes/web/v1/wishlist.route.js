@@ -4,12 +4,12 @@ const userMiddleware = require("../../../middlewares/user.middleware");
 const wishlistController = require("../../../controllers/wishlist.controller");
 
 // add into wishlist
-router.post(
-  "/add",
-  userMiddleware.authUser,
-  wishlistController.AddToWishlist,
-);
+router.post("/add", userMiddleware.authUser, wishlistController.AddToWishlist);
 
-// remove item form wishlist
+// get wishlist
+router.get("/all", userMiddleware.authUser, wishlistController.GetWishlist);
+
+// remove item from wishlist
+router.delete("/product/:productId", userMiddleware.authUser, wishlistController.RemoveFromWishlist);
 
 module.exports = router;

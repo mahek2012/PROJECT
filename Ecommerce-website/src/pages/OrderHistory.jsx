@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
-import { Package, ChevronRight, Clock, MapPin, Truck, ChevronLeft, ShoppingBag, Download, XCircle, CreditCard } from 'lucide-react';
+import { Package, ChevronRight, Clock, MapPin, Truck, ChevronLeft, ShoppingBag, Download, XCircle, CreditCard, AlertTriangle } from 'lucide-react';
 import { fetchOrders, cancelOrder } from '../redux/slices/orderSlice';
 import { toast } from 'react-toastify';
 import Skeleton from 'react-loading-skeleton';
@@ -11,6 +11,8 @@ const OrderHistory = () => {
   const dispatch = useDispatch();
   const { orders, isLoading } = useSelector((state) => state.orders);
   const [selectedOrder, setSelectedOrder] = useState(null);
+  const [ticketOrder, setTicketOrder] = useState(null);
+  const [isPrinting, setIsPrinting] = useState(false);
 
   useEffect(() => {
     dispatch(fetchOrders());
@@ -43,9 +45,71 @@ const OrderHistory = () => {
     return `${address.street || ''}, ${address.city || ''}, ${address.zipCode || ''}, ${address.country || ''}`;
   };
 
-  const handleDownloadTicket = () => {
-    window.print(); // Simple standard print functionality to generate a ticket PDF
+  const handleDownloadTicket = (order) => {
+    setTicketOrder(order);
+    setIsPrinting(true);
+    // Use a small timeout to ensure the state is updated and the component is rendered before printing
+    setTimeout(() => {
+      window.print();
+      setIsPrinting(false);
+      setTicketOrder(null);
+    }, 500);
   };
+
+  if (isPrinting && ticketOrder) {
+    return (
+      <div className="bg-white min-h-screen p-10 font-sans text-gray-900">
+         <div className="max-w-3xl mx-auto border-2 border-gray-100 p-12 rounded-[2rem]">
+            <div className="flex justify-between items-start mb-12 border-b pb-8">
+               <div>
+                  <h1 className="text-4xl font-black text-orange-600 mb-2">SHOPVERSE</h1>
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Official Order Receipt</p>
+               </div>
+               <div className="text-right">
+                  <p className="text-xs font-black text-gray-400 uppercase tracking-widest mb-1">Receipt Number</p>
+                  <p className="font-black text-gray-900 text-lg">#{ticketOrder._id?.toString().slice(-12).toUpperCase()}</p>
+               </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-12 mb-12">
+               <div>
+                  <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">Customer Details</h3>
+                  <p className="font-black text-xl mb-1">{ticketOrder.userId?.fullName || ticketOrder.userId?.username}</p>
+                  <p className="text-sm text-gray-500 font-medium">{formatAddress(ticketOrder.shippingAddress)}</p>
+               </div>
+               <div className="text-right">
+                  <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">Order Summary</h3>
+                  <div className="space-y-1">
+                     <p className="text-sm font-bold text-gray-600">Date: {new Date(ticketOrder.createdAt).toLocaleDateString()}</p>
+                     <p className="text-sm font-bold text-gray-600">Payment: {ticketOrder.paymentMethod?.toUpperCase()}</p>
+                     <p className="text-lg font-black text-orange-600 mt-2">Total: ${(ticketOrder.totalbill || 0).toFixed(2)}</p>
+                  </div>
+               </div>
+            </div>
+
+            <div className="border-t border-b border-gray-50 py-8 mb-12">
+               <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-6">Ordered Items</h3>
+               <div className="space-y-4">
+                  {ticketOrder.items?.map((item, i) => (
+                    <div key={i} className="flex justify-between items-center py-2">
+                       <div>
+                          <p className="font-black text-gray-900">{item.name}</p>
+                          <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Quantity: {item.quantity}</p>
+                       </div>
+                       <p className="font-black text-gray-900">${(item.price * item.quantity).toFixed(2)}</p>
+                    </div>
+                  ))}
+               </div>
+            </div>
+
+            <div className="text-center pt-8">
+               <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Thank you for shopping with us!</p>
+               <div className="w-12 h-1 bg-orange-600 mx-auto rounded-full"></div>
+            </div>
+         </div>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (
@@ -152,7 +216,7 @@ const OrderHistory = () => {
                   </div>
                   <div className="flex gap-3 flex-wrap">
                     <button 
-                      onClick={handleDownloadTicket}
+                      onClick={() => handleDownloadTicket(order)}
                       className="btn-secondary py-2.5 px-4 text-sm flex items-center gap-2 bg-white"
                     >
                       <Download size={16} /> Download Ticket
@@ -172,12 +236,30 @@ const OrderHistory = () => {
                       <CreditCard size={16} /> Payment Details
                     </button>
                   </div>
+
                 </div>
+
+                {/* Refund Reason Alert (Prominent Visibility) */}
+                {order.payment?.refundReason && (
+                  <div className="mx-8 mb-6 p-6 bg-red-50 border-2 border-red-100 rounded-[2rem] flex items-start gap-4">
+                    <div className="w-10 h-10 bg-red-100 rounded-xl flex items-center justify-center text-red-600 shrink-0">
+                      <AlertTriangle size={20} />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-[10px] font-black text-red-400 uppercase tracking-[0.2em] mb-1">Important Update: Refund Information</p>
+                      <h4 className="text-sm font-black text-red-900 mb-1">Admin Note / Refund Issue:</h4>
+                      <p className="text-sm text-red-700 font-bold leading-relaxed italic">
+                        "{order.payment.refundReason}"
+                      </p>
+                    </div>
+                  </div>
+                )}
               </motion.div>
             ))}
           </div>
         )}
       </div>
+
 
       {/* Payment Details Modal */}
       {selectedOrder && (
@@ -217,9 +299,24 @@ const OrderHistory = () => {
                 </div>
                 <div className="space-y-1">
                   <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Transaction ID</p>
-                  <p className="text-xs font-bold text-gray-900 font-mono">TRX-{selectedOrder._id.slice(-8).toUpperCase()}</p>
+                  <p className="text-xs font-bold text-gray-900 font-mono">
+                    {selectedOrder.payment?.transactionId || `TRX-${(selectedOrder._id || selectedOrder.id).toString().slice(-8).toUpperCase()}`}
+                  </p>
                 </div>
               </div>
+
+              {selectedOrder.payment?.refundReason && (
+                <div className="p-6 bg-red-50 border-2 border-red-100 rounded-[2rem] space-y-2">
+                  <div className="flex items-center gap-2 text-red-600">
+                    <AlertTriangle size={18} />
+                    <p className="text-xs font-black uppercase tracking-widest">Refund Reason / Issue</p>
+                  </div>
+                  <p className="text-sm text-red-700 font-bold leading-relaxed italic">
+                    "{selectedOrder.payment.refundReason}"
+                  </p>
+                </div>
+              )}
+
 
               <div className="pt-8 border-t border-gray-100 space-y-3">
                 <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Billing & Shipping Address</p>
@@ -240,6 +337,83 @@ const OrderHistory = () => {
           </motion.div>
         </div>
       )}
+
+      {/* Hidden Printable Receipt */}
+      {ticketOrder && (
+        <div id="printable-receipt" className="hidden print:block fixed inset-0 bg-white z-[9999] p-10 font-sans text-gray-900">
+           <div className="max-w-3xl mx-auto border-2 border-gray-100 p-12 rounded-[2rem]">
+              <div className="flex justify-between items-start mb-12 border-b pb-8">
+                 <div>
+                    <h1 className="text-4xl font-black text-orange-600 mb-2">SHOPVERSE</h1>
+                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Official Order Receipt</p>
+                 </div>
+                 <div className="text-right">
+                    <p className="text-xs font-black text-gray-400 uppercase tracking-widest mb-1">Receipt Number</p>
+                    <p className="font-black text-gray-900 text-lg">#{ticketOrder._id?.toString().slice(-12).toUpperCase()}</p>
+                 </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-12 mb-12">
+                 <div>
+                    <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">Customer Details</h3>
+                    <p className="font-black text-xl mb-1">{ticketOrder.userId?.fullName || ticketOrder.userId?.username}</p>
+                    <p className="text-sm text-gray-500 font-medium">{formatAddress(ticketOrder.shippingAddress)}</p>
+                 </div>
+                 <div className="text-right">
+                    <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">Order Summary</h3>
+                    <div className="space-y-1">
+                       <p className="text-sm font-bold text-gray-600">Date: {new Date(ticketOrder.createdAt).toLocaleDateString()}</p>
+                       <p className="text-sm font-bold text-gray-600">Payment: {ticketOrder.paymentMethod?.toUpperCase()}</p>
+                       <p className="text-lg font-black text-orange-600 mt-2">Total: ${(ticketOrder.totalbill || 0).toFixed(2)}</p>
+                    </div>
+                 </div>
+              </div>
+
+              <div className="border-t border-b border-gray-50 py-8 mb-12">
+                 <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-6">Ordered Items</h3>
+                 <div className="space-y-4">
+                    {ticketOrder.items?.map((item, i) => (
+                      <div key={i} className="flex justify-between items-center py-2">
+                         <div>
+                            <p className="font-black text-gray-900">{item.name}</p>
+                            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Quantity: {item.quantity}</p>
+                         </div>
+                         <p className="font-black text-gray-900">${(item.price * item.quantity).toFixed(2)}</p>
+                      </div>
+                    ))}
+                 </div>
+              </div>
+
+              <div className="text-center pt-8">
+                 <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Thank you for shopping with us!</p>
+                 <div className="w-12 h-1 bg-orange-600 mx-auto rounded-full"></div>
+              </div>
+           </div>
+        </div>
+      )}
+
+      {/* Print Specific Styles */}
+      <style>{`
+        @media print {
+          body {
+            background: white !important;
+          }
+          #root > * {
+            display: none !important;
+          }
+          #printable-receipt {
+            display: block !important;
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            visibility: visible !important;
+          }
+          #printable-receipt * {
+            visibility: visible !important;
+          }
+        }
+      `}</style>
     </div>
   );
 };

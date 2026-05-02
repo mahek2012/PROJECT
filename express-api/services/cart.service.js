@@ -1,41 +1,29 @@
 const cartModel = require("../models/cart.model");
 
 // add item to cart
-module.exports.addToCart = async ({ userId, item }) => {
-  let cart = await cartModel.findOne({ userId });
+module.exports.addToCart = async ({ userId, productId, quantity, behavior }) => {
+  let cartItem = await cartModel.findOne({ userId, productId });
 
-  if (!cart) cart = new cartModel({ userId, items: [] });
-
-  cart.items.push(item);
-  return await cart.save();
+  if (cartItem) {
+    if (behavior === 'set') {
+      cartItem.quantity = quantity;
+    } else {
+      cartItem.quantity += (quantity || 1);
+    }
+    return await cartItem.save();
+  } else {
+    cartItem = new cartModel({ userId, productId, quantity: quantity || 1 });
+    return await cartItem.save();
+  }
 };
+
 
 // get Cart
 module.exports.GetCart = async (userId) => {
-  return await cartModel.findOne({ userId });
+  return await cartModel.find({ userId }).populate("productId");
 };
 
 // delete single product from cart
 module.exports.RemoveSingleProduct = async ({ userId, productId }) => {
-  // find login user cart
-  let cart = await cartModel.findOne({ userId });
-
-  if (!cart) throw new Error("Cart Not Found !!");
-
-  // find index number of product based on productId
-  const itemIndex = cart.items.findIndex(
-    (i) => i.productId.equals(productId),
-    // i --> that give items array
-  );
-
-  console.log(itemIndex);
-
-  if (itemIndex < 0) {
-    console.log(itemIndex, productId);
-    throw new Error("Item not Found");
-  }
-
-  cart.items.splice(itemIndex, 1);
-
-  await cart.save();
+  return await cartModel.findOneAndDelete({ userId, productId });
 };

@@ -1,42 +1,52 @@
 import { Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { ShoppingCart, Heart, Star } from 'lucide-react';
-import { addToCart } from '../../redux/slices/cartSlice';
-import { toggleWishlist } from '../../redux/slices/wishlistSlice';
+import { addItemToCart } from '../../redux/slices/cartSlice';
+import { addToWishlist, removeFromWishlist } from '../../redux/slices/wishlistSlice';
+
 import { toast } from 'react-toastify';
 import { motion } from 'framer-motion';
 
 const ProductCard = ({ product, viewMode = 'grid' }) => {
   const dispatch = useDispatch();
   const { items: wishlistItems } = useSelector((state) => state.wishlist);
-  const isWishlisted = wishlistItems.some((item) => item.id === product.id);
+  const { token } = useSelector((state) => state.auth);
+  const isAuthenticated = !!token;
+  
+  const isWishlisted = wishlistItems.some((item) => item.id === product._id || item.productId === product._id);
 
   const handleAddToCart = (e) => {
     e.preventDefault();
-    dispatch(addToCart(product));
-    toast.success(`${product.name} added to cart!`, {
-      icon: <ShoppingCart size={18} className="text-orange-600" />
-    });
+    if (!isAuthenticated) {
+      toast.error('Please login to add items to cart');
+      return;
+    }
+    dispatch(addItemToCart({ productId: product._id, quantity: 1 }));
+    toast.success(`${product.name} added to cart!`);
   };
 
   const handleWishlist = (e) => {
     e.preventDefault();
-    dispatch(toggleWishlist(product));
+    if (!isAuthenticated) {
+      toast.error('Please login to manage wishlist');
+      return;
+    }
     if (isWishlisted) {
+      dispatch(removeFromWishlist(product._id));
       toast.info('Removed from wishlist');
     } else {
-      toast.success('Added to wishlist', {
-        icon: <Heart size={18} className="text-red-500 fill-red-500" />
-      });
+      dispatch(addToWishlist(product._id));
+      toast.success('Added to wishlist');
     }
   };
+
 
   return (
     <motion.div 
       whileHover={{ y: -5 }}
       className={`card group ${viewMode === 'list' ? 'flex flex-row overflow-hidden' : ''}`}
     >
-      <Link to={`/product/${product.id}`} className={`block relative bg-gray-100 ${viewMode === 'list' ? 'w-48 sm:w-64 shrink-0' : 'aspect-square overflow-hidden'}`}>
+      <Link to={`/product/${product._id}`} className={`block relative bg-gray-100 ${viewMode === 'list' ? 'w-48 sm:w-64 shrink-0' : 'aspect-square overflow-hidden'}`}>
         <img
           src={product.image || 'https://via.placeholder.com/300'}
           alt={product.name}
@@ -84,7 +94,7 @@ const ProductCard = ({ product, viewMode = 'grid' }) => {
         <p className="text-xs text-gray-500 font-medium uppercase tracking-wider mb-1">
           {product.category || 'Category'}
         </p>
-        <Link to={`/product/${product.id}`}>
+        <Link to={`/product/${product._id}`}>
           <h3 className="font-semibold text-gray-900 line-clamp-1 group-hover:text-orange-600 transition-colors">
             {product.name}
           </h3>

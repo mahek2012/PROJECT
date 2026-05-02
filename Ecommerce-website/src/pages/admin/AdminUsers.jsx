@@ -142,9 +142,14 @@ const AdminUsers = () => {
                 <tr key={user._id} className="hover:bg-gray-50/50 transition-colors group">
                   <td className="px-10 py-6">
                     <div className="flex items-center gap-4 cursor-pointer" onClick={() => handleUserClick(user)}>
-                      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-white font-black text-sm shadow-lg ${user.status === 'blocked' ? 'bg-gray-400' : 'bg-orange-600 shadow-orange-100'}`}>
-                        {user.username?.charAt(0).toUpperCase()}
+                      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-white font-black text-sm shadow-lg overflow-hidden ${user.status === 'blocked' ? 'bg-gray-400' : 'bg-orange-600 shadow-orange-100'}`}>
+                        {user.profilePhoto ? (
+                          <img src={user.profilePhoto} alt={user.username} className="w-full h-full object-cover" />
+                        ) : (
+                          user.username?.charAt(0).toUpperCase()
+                        )}
                       </div>
+
                       <div>
                         <p className="font-black text-gray-900 group-hover:text-orange-600 transition-colors">{user.username}</p>
                         <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest">ID: {user._id.slice(-8).toUpperCase()}</p>
@@ -240,9 +245,14 @@ const AdminUsers = () => {
               <div className="flex-1 overflow-y-auto p-8 space-y-10">
                 {/* Profile Card */}
                 <div className="flex items-center gap-8">
-                   <div className={`w-32 h-32 rounded-[2.5rem] flex items-center justify-center text-white text-5xl font-black shadow-2xl ${selectedUser.status === 'blocked' ? 'bg-gray-400' : 'bg-orange-600 shadow-orange-100'}`}>
-                    {selectedUser.username?.charAt(0).toUpperCase()}
+                   <div className={`w-32 h-32 rounded-[2.5rem] flex items-center justify-center text-white text-5xl font-black shadow-2xl overflow-hidden ${selectedUser.status === 'blocked' ? 'bg-gray-400' : 'bg-orange-600 shadow-orange-100'}`}>
+                    {selectedUser.profilePhoto ? (
+                      <img src={selectedUser.profilePhoto} alt={selectedUser.username} className="w-full h-full object-cover" />
+                    ) : (
+                      selectedUser.username?.charAt(0).toUpperCase()
+                    )}
                   </div>
+
                   <div className="space-y-2">
                     <div className="flex items-center gap-3">
                       <h3 className="text-3xl font-black text-gray-900">{selectedUser.username}</h3>

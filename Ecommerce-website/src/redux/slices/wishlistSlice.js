@@ -1,38 +1,85 @@
-import { createSlice } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import axiosInstance from '../../services/api/axiosInstance';
 
-const getSafeWishlist = () => {
+// Async Thunks
+export const fetchWishlist = createAsyncThunk('wishlist/fetchWishlist', async (_, { rejectWithValue }) => {
   try {
-    const items = localStorage.getItem('wishlist');
-    return items ? JSON.parse(items) : [];
-  } catch (e) {
-    return [];
+    const response = await axiosInstance.get('/wishlist/all');
+    return response.data.wishlist;
+  } catch (error) {
+    return rejectWithValue(error.response.data);
   }
-};
+});
+
+export const addToWishlist = createAsyncThunk('wishlist/addToWishlist', async (productId, { rejectWithValue }) => {
+  try {
+    const response = await axiosInstance.post('/wishlist/add', { productId });
+    return response.data;
+  } catch (error) {
+    return rejectWithValue(error.response.data);
+  }
+});
+
+export const removeFromWishlist = createAsyncThunk('wishlist/removeFromWishlist', async (productId, { rejectWithValue }) => {
+  try {
+    const response = await axiosInstance.delete(`/wishlist/product/${productId}`);
+    return { productId, ...response.data };
+  } catch (error) {
+    return rejectWithValue(error.response.data);
+  }
+});
 
 const initialState = {
-  items: getSafeWishlist(),
+  items: [],
+  isLoading: false,
+  error: null
 };
 
 const wishlistSlice = createSlice({
   name: 'wishlist',
   initialState,
-  reducers: {
-    toggleWishlist: (state, action) => {
-      const product = action.payload;
-      const index = state.items.findIndex(item => item.id === product.id);
-      if (index >= 0) {
-        state.items.splice(index, 1);
-      } else {
-        state.items.push(product);
-      }
-      localStorage.setItem('wishlist', JSON.stringify(state.items));
-    },
-    removeFromWishlist: (state, action) => {
-      state.items = state.items.filter(item => item.id !== action.payload);
-      localStorage.setItem('wishlist', JSON.stringify(state.items));
-    }
+  reducers: {},
+  extraReducers: (builder) => {
+    builder
+      .addCase(fetchWishlist.pending, (state) => {
+        state.isLoading = true;
+      })
+      .addCase(fetchWishlist.fulfilled, (state, action) => {
+        state.isLoading = false;
+        const items = action.payload || [];
+        state.items = items
+          .filter(item => item && item.productId) // Safety check: skip if product was deleted
+          .map(item => ({
+            id: item.productId._id,
+            name: item.productId.name,
+            price: item.productId.price,
+            image: item.productId.images?.[0],
+            productId: item.productId._id
+          }));
+      })
+      .addCase(fetchWishlist.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload?.message;
+      })
+      .addCase(removeFromWishlist.fulfilled, (state, action) => {
+        state.items = state.items.filter(item => item.id !== action.payload.productId);
+      })
+      .addCase(addToWishlist.fulfilled, (state, action) => {
+        const wishlistItems = action.payload.wishlist || [];
+        state.items = wishlistItems
+          .filter(item => item && item.productId)
+          .map(item => ({
+            id: item.productId._id,
+            name: item.productId.name,
+            price: item.productId.price,
+            image: item.productId.images?.[0],
+            productId: item.productId._id
+          }));
+      });
+
+
   }
 });
 
-export const { toggleWishlist, removeFromWishlist } = wishlistSlice.actions;
 export default wishlistSlice.reducer;
+
