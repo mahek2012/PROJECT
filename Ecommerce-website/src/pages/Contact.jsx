@@ -1,21 +1,30 @@
 import { useState } from 'react';
 import { Mail, Phone, MapPin, Send, MessageSquare } from 'lucide-react';
 import { motion } from 'framer-motion';
+import axiosInstance from '../services/api/axiosInstance';
+import { toast } from 'react-toastify';
 
 const Contact = () => {
-  const [formData, setFormData] = useState({ name: '', email: '', message: '' });
+  const [formData, setFormData] = useState({ name: '', email: '', message: '', subject: 'General Inquiry' });
   const [status, setStatus] = useState('idle'); // idle, loading, success
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setStatus('loading');
     
-    // Simulate API call
-    setTimeout(() => {
-      setStatus('success');
-      setFormData({ name: '', email: '', message: '' });
-      setTimeout(() => setStatus('idle'), 5000);
-    }, 1500);
+    try {
+      const response = await axiosInstance.post('/contact/send', formData);
+      if (response.data.success) {
+        setStatus('success');
+        toast.success('Message sent successfully! We will get back to you soon.');
+        setFormData({ name: '', email: '', message: '', subject: 'General Inquiry' });
+        setTimeout(() => setStatus('idle'), 5000);
+      }
+    } catch (error) {
+      console.error('Error sending message:', error);
+      toast.error(error.response?.data?.message || 'Failed to send message. Please try again.');
+      setStatus('idle');
+    }
   };
 
   return (
@@ -123,6 +132,21 @@ const Contact = () => {
                       className="w-full bg-gray-50 border-none rounded-xl px-6 py-4 font-medium focus:ring-2 focus:ring-orange-500 outline-none transition-all"
                     />
                   </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-gray-700">Subject</label>
+                  <select 
+                    value={formData.subject}
+                    onChange={(e) => setFormData({...formData, subject: e.target.value})}
+                    className="w-full bg-gray-50 border-none rounded-xl px-6 py-4 font-medium focus:ring-2 focus:ring-orange-500 outline-none transition-all"
+                  >
+                    <option value="General Inquiry">General Inquiry</option>
+                    <option value="Order Status">Order Status</option>
+                    <option value="Product Support">Product Support</option>
+                    <option value="Returns & Refunds">Returns & Refunds</option>
+                    <option value="Business Inquiry">Business Inquiry</option>
+                  </select>
                 </div>
 
                 <div className="space-y-2">

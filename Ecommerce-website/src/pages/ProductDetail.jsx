@@ -27,11 +27,17 @@ const ProductDetail = () => {
   const [reviewComment, setReviewComment] = useState('');
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
 
+  // Recommendations state
+  const [recommendations, setRecommendations] = useState([]);
+  const [isRecLoading, setIsRecLoading] = useState(false);
+
   const isWishlisted = wishlistItems.some((item) => item.id === product?._id || item.productId === product?._id);
 
   useEffect(() => {
     dispatch(fetchProductById(id));
     fetchReviews();
+    fetchRecommendations();
+    window.scrollTo(0, 0);
     return () => dispatch(clearProduct());
   }, [dispatch, id]);
 
@@ -43,6 +49,20 @@ const ProductDetail = () => {
       }
     } catch (err) {
       console.error('Failed to fetch reviews', err);
+    }
+  };
+
+  const fetchRecommendations = async () => {
+    try {
+      setIsRecLoading(true);
+      const res = await axiosInstance.get(`/products/recommendations/${id}`);
+      if (res.data?.success) {
+        setRecommendations(res.data.products);
+      }
+    } catch (err) {
+      console.error('Failed to fetch recommendations', err);
+    } finally {
+      setIsRecLoading(false);
     }
   };
 
@@ -372,6 +392,57 @@ const ProductDetail = () => {
 
           </div>
         </div>
+
+        {/* Smart Recommendations Section */}
+        {recommendations.length > 0 && (
+          <div className="mt-24 pt-20 border-t border-gray-100">
+            <div className="flex items-center justify-between mb-12">
+              <div>
+                <h3 className="text-3xl font-black text-gray-900 tracking-tight">You May Also Like</h3>
+                <p className="text-gray-500 font-medium mt-1">Smartly selected for you based on your interests</p>
+              </div>
+              <Link to="/products" className="text-orange-600 font-black text-sm uppercase tracking-widest hover:underline flex items-center gap-2">
+                Explore More <ChevronRight size={18} />
+              </Link>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+              {recommendations.map((rec) => (
+                <motion.div
+                  key={rec._id}
+                  whileHover={{ y: -10 }}
+                  className="bg-white rounded-3xl border border-gray-50 shadow-sm overflow-hidden group cursor-pointer"
+                >
+                  <Link to={`/product/${rec._id}`} className="block">
+                    <div className="aspect-[4/5] bg-gray-50 overflow-hidden relative">
+                      <img 
+                        src={rec.images?.[0] || rec.image} 
+                        alt={rec.name}
+                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                      />
+                      <div className="absolute top-4 right-4">
+                        <button className="w-10 h-10 bg-white/80 backdrop-blur-md rounded-xl flex items-center justify-center text-gray-400 hover:text-red-500 shadow-sm transition-all">
+                          <Heart size={18} />
+                        </button>
+                      </div>
+                    </div>
+                    <div className="p-6">
+                      <p className="text-[10px] font-black text-orange-500 uppercase tracking-widest mb-2">{rec.category}</p>
+                      <h4 className="font-bold text-gray-900 mb-2 truncate group-hover:text-orange-600 transition-colors">{rec.name}</h4>
+                      <div className="flex items-center justify-between">
+                        <span className="text-xl font-black text-gray-900">${rec.price}</span>
+                        <div className="flex items-center gap-1 text-yellow-400">
+                          <Star size={14} fill="currentColor" />
+                          <span className="text-xs font-bold text-gray-900">{rec.rating || 4.5}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </Link>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

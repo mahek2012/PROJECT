@@ -6,11 +6,15 @@ import { logout } from '../../redux/slices/authSlice';
 import { fetchCart } from '../../redux/slices/cartSlice';
 import { fetchWishlist } from '../../redux/slices/wishlistSlice';
 
+import axiosInstance from '../../services/api/axiosInstance';
+
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isCategoriesOpen, setIsCategoriesOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [suggestions, setSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const { user, token } = useSelector((state) => state.auth);
   const { totalQuantity } = useSelector((state) => state.cart);
   const { items: wishlistItems } = useSelector((state) => state.wishlist);
@@ -23,6 +27,30 @@ const Navbar = () => {
       dispatch(fetchWishlist());
     }
   }, [dispatch, token]);
+
+  useEffect(() => {
+    const fetchSuggestions = async () => {
+      if (searchQuery.trim().length > 2) {
+        try {
+          console.log('Fetching suggestions for:', searchQuery);
+          const res = await axiosInstance.get(`/products/smart-search?q=${searchQuery}`);
+          if (res.data?.success) {
+            console.log('Suggestions received:', res.data.products.length);
+            setSuggestions(res.data.products.slice(0, 5));
+            setShowSuggestions(true);
+          }
+        } catch (err) {
+          console.error('Search API failed:', err);
+        }
+      } else {
+        setSuggestions([]);
+        setShowSuggestions(false);
+      }
+    };
+
+    const timer = setTimeout(fetchSuggestions, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
 
   const handleLogout = () => {
@@ -78,10 +106,53 @@ const Navbar = () => {
               className="w-full bg-[#f1f3f5] border-none rounded-lg py-2.5 pl-5 pr-12 focus:ring-2 focus:ring-[#ff6b01] outline-none text-sm font-medium"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
+              onFocus={() => setShowSuggestions(true)}
+              onBlur={() => setTimeout(() => setShowSuggestions(false), 300)}
             />
             <button type="submit" className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500">
               <Search size={18} />
             </button>
+
+            {/* Suggestions Dropdown */}
+            {showSuggestions && suggestions.length > 0 && (
+              <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] border border-gray-100 overflow-hidden z-[999] animate-in fade-in slide-in-from-top-2 duration-200">
+                <div className="p-3 bg-gray-50 border-b border-gray-100 flex items-center justify-between">
+                  <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Top Suggestions</span>
+                  <span className="text-[10px] font-bold text-orange-600">{suggestions.length} products found</span>
+                </div>
+                {suggestions.map((p) => (
+                  <Link 
+                    key={p._id} 
+                    to={`/product/${p._id}`}
+                    className="flex items-center gap-4 p-4 hover:bg-orange-50 transition-all border-b border-gray-50 last:border-0 group"
+                    onClick={() => {
+                      setSearchQuery('');
+                      setShowSuggestions(false);
+                    }}
+                  >
+                    <div className="w-12 h-12 rounded-xl overflow-hidden border border-gray-100 shrink-0">
+                      <img src={p.images?.[0]} alt="" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-bold text-gray-900 truncate group-hover:text-orange-600 transition-colors">{p.name}</p>
+                      <p className="text-[10px] text-gray-400 font-bold uppercase tracking-tighter">{p.category} • {p.brand}</p>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-sm font-black text-gray-900">${p.price}</span>
+                      {p.discount > 0 && (
+                        <p className="text-[10px] text-green-600 font-bold">-{p.discount}%</p>
+                      )}
+                    </div>
+                  </Link>
+                ))}
+                <button 
+                  onClick={() => navigate(`/products?search=${searchQuery}`)}
+                  className="w-full p-4 bg-gray-900 text-white text-xs font-black uppercase tracking-widest hover:bg-orange-600 transition-all"
+                >
+                  View All Results
+                </button>
+              </div>
+            )}
           </form>
 
           {/* Actions */}

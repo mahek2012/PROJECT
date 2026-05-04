@@ -3,7 +3,7 @@ import {
   User, Mail, Phone, MapPin, Package, Heart, Settings, 
   LogOut, Camera, ChevronRight, Bell, Shield, Lock, 
   Plus, Trash2, Edit3, CreditCard, Zap, Star, ShieldCheck,
-  CheckCircle2, X, Home, Briefcase, Globe
+  CheckCircle2, X, Home, Briefcase, Globe, MessageSquare
 } from 'lucide-react';
 import { logout, updateUser } from '../redux/slices/authSlice';
 import { useNavigate, Link } from 'react-router-dom';
@@ -44,6 +44,7 @@ const Profile = () => {
     { id: 'settings', icon: <Settings size={20} />, label: 'Account Settings', color: 'orange' },
     { id: 'addresses', icon: <MapPin size={20} />, label: 'Shipping Addresses', color: 'green' },
     { id: 'membership', icon: <Zap size={20} />, label: 'Upgrade Now', color: 'purple' },
+    { id: 'support', icon: <MessageSquare size={20} />, label: 'My Support', color: 'orange' },
   ];
 
   // Sub-components
@@ -368,6 +369,92 @@ const Profile = () => {
     );
   };
 
+  const SupportInbox = () => {
+    const [messages, setMessages] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+      const fetchMessages = async () => {
+        try {
+          const res = await axiosInstance.get('/contact/my-messages');
+          if (res.data.success) {
+            setMessages(res.data.messages);
+          }
+        } catch (error) {
+          console.error('Failed to fetch messages');
+        } finally {
+          setLoading(false);
+        }
+      };
+      fetchMessages();
+    }, []);
+
+    return (
+      <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-500">
+        <div className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm">
+          <h3 className="text-2xl font-black text-gray-900 mb-2">Support Tickets</h3>
+          <p className="text-gray-400 text-sm font-medium">Track your inquiries and our responses</p>
+        </div>
+
+        <div className="space-y-6">
+          {loading ? (
+            <div className="text-center py-20"><div className="w-10 h-10 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mx-auto" /></div>
+          ) : messages.length === 0 ? (
+            <div className="bg-white p-12 rounded-[3rem] border border-dashed border-gray-200 text-center">
+              <MessageSquare size={48} className="mx-auto text-gray-200 mb-4" />
+              <p className="text-gray-500 font-bold">No support messages found.</p>
+              <Link to="/contact" className="text-orange-600 font-black text-xs uppercase tracking-widest mt-4 inline-block hover:underline">Contact Support</Link>
+            </div>
+          ) : (
+            messages.map((msg) => (
+              <div key={msg._id} className="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm overflow-hidden">
+                <div className="p-8">
+                  <div className="flex justify-between items-start mb-4">
+                    <div>
+                      <span className={`px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest border ${
+                        msg.status === 'replied' ? 'bg-green-50 text-green-600 border-green-100' : 'bg-orange-50 text-orange-600 border-orange-100'
+                      }`}>
+                        {msg.status}
+                      </span>
+                      <h4 className="text-xl font-black text-gray-900 mt-3">{msg.subject}</h4>
+                    </div>
+                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                      {new Date(msg.createdAt).toLocaleDateString()}
+                    </span>
+                  </div>
+                  <p className="text-gray-600 font-medium leading-relaxed bg-gray-50 p-6 rounded-2xl mb-6 italic">
+                    "{msg.message}"
+                  </p>
+
+                  {msg.adminReply && (
+                    <div className="mt-8 pt-8 border-t border-gray-50">
+                      <div className="flex gap-4 items-start">
+                        <div className="w-12 h-12 bg-orange-600 rounded-2xl flex items-center justify-center shrink-0 shadow-lg shadow-orange-100">
+                          <ShieldCheck className="text-white" size={24} />
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex justify-between items-center mb-2">
+                            <p className="font-black text-gray-900">Admin Response</p>
+                            <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">
+                              {msg.repliedAt ? new Date(msg.repliedAt).toLocaleDateString() : ''}
+                            </span>
+                          </div>
+                          <div className="p-6 bg-orange-50 text-orange-900 rounded-2xl border border-orange-100">
+                            <p className="font-bold leading-relaxed">{msg.adminReply}</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="bg-gray-50 min-h-screen py-20">
       <div className="container-custom max-w-7xl mx-auto px-4">
@@ -461,6 +548,7 @@ const Profile = () => {
             {activeSection === 'settings' && <AccountSettings />}
             {activeSection === 'addresses' && <AddressBook />}
             {activeSection === 'membership' && <Membership />}
+            {activeSection === 'support' && <SupportInbox />}
           </div>
         </div>
       </div>

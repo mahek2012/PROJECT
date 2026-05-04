@@ -210,3 +210,27 @@ module.exports.getProductReviews = async (req, res) => {
     return res.status(400).json({ success: false, message: error.message });
   }
 };
+
+// get recommendations
+module.exports.getRecommendations = async (req, res) => {
+  try {
+    const productId = req.params.id;
+    const recommendations = await productService.getRecommendedProducts(productId);
+    return res.status(200).json({ success: true, products: recommendations });
+  } catch (error) {
+    return res.status(400).json({ success: false, message: error.message });
+  }
+};
+
+// Smart Search
+module.exports.smartSearch = async (req, res) => {
+  try {
+    const { q } = req.query;
+    if (!q) return res.status(200).json({ success: true, products: [] });
+    
+    const products = await productService.smartSearch(q);
+    return res.status(200).json({ success: true, products });
+  } catch (error) {
+    return res.status(400).json({ success: false, message: error.message });
+  }
+};

@@ -1,8 +1,3 @@
-// product creation
-// product read single and all
-// product update
-// product delete
-
 const express = require("express");
 const userMiddleware = require("../../../middlewares/user.middleware");
 const adminMiddleware = require("../../../middlewares/admin.middleware");
@@ -16,24 +11,33 @@ router.post(
   adminMiddleware.authAdmin,
   productController.createProduct,
 );
-// authUser ==> check user login or not? ==> if login then --> req.user (give you back)
-// authAdmin ==> req.user ==> check role ==> Admin or not? --> jump to next router
 
-// all product
+// all products
 router.get(
   "/",
   userMiddleware.authUser,
   productController.allProduct,
 );
 
-// get categories
+// get categories -- must be before /:id
 router.get(
   "/categories",
   productController.getCategories
 );
 
+// Smart Search -- must be before /:id
+router.get(
+  "/smart-search",
+  productController.smartSearch
+);
 
-// single product
+// Recommendations -- must be before /:id
+router.get(
+  "/recommendations/:id",
+  productController.getRecommendations
+);
+
+// single product -- /:id must come AFTER specific routes
 router.get(
   "/:id",
   userMiddleware.authUser,

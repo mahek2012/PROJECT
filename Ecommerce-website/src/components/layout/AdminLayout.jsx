@@ -17,7 +17,8 @@ import {
   X,
   Search,
   LogOut,
-  ChevronRight
+  ChevronRight,
+  Mail
 } from 'lucide-react';
 import { useSelector, useDispatch } from 'react-redux';
 import { logout } from '../../redux/slices/authSlice';
@@ -40,6 +41,7 @@ const AdminLayout = () => {
     { icon: <Gift size={20} />, label: 'Offers', path: '/admin/offers' },
     { icon: <BarChart3 size={20} />, label: 'Reports', path: '/admin/reports' },
     { icon: <Bell size={20} />, label: 'Notifications', path: '/admin/notifications' },
+    { icon: <Mail size={20} />, label: 'Contact', path: '/admin/contact' },
     { icon: <Settings size={20} />, label: 'Settings', path: '/admin/settings' },
   ];
 

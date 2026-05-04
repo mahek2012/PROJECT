@@ -39,6 +39,8 @@ const AdminOffers = lazy(() => import('./pages/admin/AdminOffers'));
 const AdminReports = lazy(() => import('./pages/admin/AdminReports'));
 const AdminNotifications = lazy(() => import('./pages/admin/AdminNotifications'));
 const AdminSettings = lazy(() => import('./pages/admin/AdminSettings'));
+const AdminContact = lazy(() => import('./pages/admin/AdminContact'));
+
 
 function App() {
   return (
@@ -89,6 +91,8 @@ function App() {
             <Route path="reports" element={<AdminReports />} />
             <Route path="notifications" element={<AdminNotifications />} />
             <Route path="settings" element={<AdminSettings />} />
+            <Route path="contact" element={<AdminContact />} />
+
           </Route>
         </Route>
       </Routes>
