@@ -17,6 +17,7 @@ const newsletterRouter = require("./routes/web/v1/newsletter.route");
 const offerRouter = require("./routes/web/v1/offer.route");
 const contactRouter = require("./routes/web/v1/contact.route");
 const faqRouter = require("./routes/web/v1/faq.route");
+const notificationRouter = require("./routes/web/v1/notification.route");
 
 const app = express();
 
@@ -49,6 +50,7 @@ app.use("/newsletter", newsletterRouter);
 app.use("/offers", offerRouter);
 app.use("/contact", contactRouter);
 app.use("/faqs", faqRouter);
+app.use("/notifications", notificationRouter);
 
 app.listen(PORT, () => {
   console.log(`✅ server is Running on PORT ${PORT}`);

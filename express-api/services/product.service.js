@@ -153,6 +153,18 @@ module.exports.smartSearch = async (query) => {
   // 2. Intent Parsing
   let mongoQuery = {};
   
+  // Brand Intent (Detect if query contains a known brand)
+  const allBrands = await productModel.distinct('brand');
+  const sortedBrands = allBrands.sort((a, b) => b.length - a.length);
+  const detectedBrand = sortedBrands.find(b => 
+    new RegExp(`\\b${b}\\b`, 'i').test(cleanedQuery)
+  );
+
+  if (detectedBrand) {
+    mongoQuery.brand = { $regex: `^${detectedBrand}$`, $options: 'i' };
+    cleanedQuery = cleanedQuery.replace(new RegExp(`\\b${detectedBrand}\\b`, 'gi'), '').trim();
+  }
+
   // Price Intent (e.g., "under 1000", "below 500")
   const priceMatch = cleanedQuery.match(/(?:under|below|less than|se kam)\s*(\d+)/i);
   if (priceMatch) {
@@ -175,7 +187,15 @@ module.exports.smartSearch = async (query) => {
     mongoQuery.$or = mongoQuery.$or || [];
     mongoQuery.$or.push({ name: { $regex: cleanedQuery, $options: 'i' } });
     mongoQuery.$or.push({ category: { $regex: cleanedQuery, $options: 'i' } });
-    mongoQuery.$or.push({ brand: { $regex: cleanedQuery, $options: 'i' } });
+    
+    // Only search in brand if not already filtered by brand
+    if (!detectedBrand) {
+      mongoQuery.$or.push({ brand: { $regex: cleanedQuery, $options: 'i' } });
+    }
+    
+    // Only search in description if query is specific (avoid broad brand matches in descriptions)
+    // If brand was detected, we match description within that brand.
+    // If no brand detected, we only match description if it's not a single common word (optional refinement)
     mongoQuery.$or.push({ description: { $regex: cleanedQuery, $options: 'i' } });
   }
 

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { ShoppingCart, Heart, Star, ChevronRight, Truck, ShieldCheck, RotateCcw, Minus, Plus, Share2, Check } from 'lucide-react';
+import { ShoppingCart, Heart, Star, ChevronRight, Truck, ShieldCheck, RotateCcw, Minus, Plus, Share2, Check, Sparkles, ThumbsUp, ThumbsDown, MessageSquare, X } from 'lucide-react';
 import { fetchProductById, clearProduct } from '../redux/slices/productSlice';
 import { toast } from 'react-toastify';
 import Skeleton from 'react-loading-skeleton';
@@ -30,6 +30,8 @@ const ProductDetail = () => {
   // Recommendations state
   const [recommendations, setRecommendations] = useState([]);
   const [isRecLoading, setIsRecLoading] = useState(false);
+  const [reviewAnalysis, setReviewAnalysis] = useState(null);
+  const [isAnalysisLoading, setIsAnalysisLoading] = useState(false);
 
   const isWishlisted = wishlistItems.some((item) => item.id === product?._id || item.productId === product?._id);
 
@@ -37,6 +39,7 @@ const ProductDetail = () => {
     dispatch(fetchProductById(id));
     fetchReviews();
     fetchRecommendations();
+    fetchReviewAnalysis();
     window.scrollTo(0, 0);
     return () => dispatch(clearProduct());
   }, [dispatch, id]);
@@ -52,6 +55,13 @@ const ProductDetail = () => {
     }
   };
 
+  // Calculate Rating Breakdown
+  const ratingBreakdown = [5, 4, 3, 2, 1].map(star => {
+    const count = reviews.filter(r => r.rating === star).length;
+    const percentage = reviews.length > 0 ? (count / reviews.length) * 100 : 0;
+    return { star, count, percentage };
+  });
+
   const fetchRecommendations = async () => {
     try {
       setIsRecLoading(true);
@@ -63,6 +73,20 @@ const ProductDetail = () => {
       console.error('Failed to fetch recommendations', err);
     } finally {
       setIsRecLoading(false);
+    }
+  };
+
+  const fetchReviewAnalysis = async () => {
+    try {
+      setIsAnalysisLoading(true);
+      const res = await axiosInstance.get(`/products/${id}/review-analysis`);
+      if (res.data?.success) {
+        setReviewAnalysis(res.data.analysis);
+      }
+    } catch (err) {
+      console.error('Failed to fetch review analysis', err);
+    } finally {
+      setIsAnalysisLoading(false);
     }
   };
 
@@ -186,9 +210,21 @@ const ProductDetail = () => {
           <div className="lg:w-1/2">
             <div className="space-y-8">
               <div>
-                <span className="inline-block px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-xs font-bold uppercase tracking-wider mb-4">
-                  {product.category}
-                </span>
+                <div className="flex flex-wrap items-center gap-3 mb-4">
+                  <span className="inline-block px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-xs font-bold uppercase tracking-wider">
+                    {product.category}
+                  </span>
+                  {product.views > 50 && (
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-red-100 text-red-600 rounded-full text-xs font-black uppercase tracking-widest animate-pulse">
+                      <Sparkles size={12} /> High Demand
+                    </span>
+                  )}
+                  {product.soldQuantity > 10 && (
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-orange-100 text-orange-600 rounded-full text-xs font-black uppercase tracking-widest">
+                      🔥 Selling Fast
+                    </span>
+                  )}
+                </div>
                 <h1 className="text-4xl lg:text-5xl font-extrabold text-gray-900 leading-tight mb-4">{product.name}</h1>
 
                 <div className="flex items-center gap-6">
@@ -205,15 +241,34 @@ const ProductDetail = () => {
                 </div>
               </div>
 
-              <div className="flex items-baseline gap-4">
-                <span className="text-4xl font-extrabold text-gray-900">${product.price}</span>
-                {product.oldPrice && (
-                  <span className="text-xl text-gray-400 line-through font-medium">${product.oldPrice}</span>
-                )}
-                {product.discount > 0 && (
-                  <span className="bg-red-100 text-red-600 px-3 py-1 rounded-lg text-sm font-bold">
-                    Save {product.discount}%
+              <div className="space-y-2">
+                <div className="flex items-baseline gap-4">
+                  <span className={`text-4xl font-extrabold ${product.priceStatus === 'dropped' ? 'text-green-600' : 'text-gray-900'}`}>
+                    ${product.dynamicPrice || product.price}
                   </span>
+                  {(product.dynamicPrice !== product.price || product.oldPrice) && (
+                    <span className="text-xl text-gray-400 line-through font-medium">
+                      ${product.price}
+                    </span>
+                  )}
+                  {product.discount > 0 && (
+                    <span className="bg-red-100 text-red-600 px-3 py-1 rounded-lg text-sm font-bold">
+                      Save {product.discount}%
+                    </span>
+                  )}
+                </div>
+
+                {/* AI Urgency Messages */}
+                {product.urgencyMessage && (
+                  <motion.div 
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    className={`flex items-center gap-2 text-sm font-black uppercase tracking-tighter ${
+                      product.priceStatus === 'dropped' ? 'text-green-600' : 'text-orange-600'
+                    }`}
+                  >
+                    {product.priceStatus === 'dropped' ? '⚡' : '🔥'} {product.urgencyMessage}
+                  </motion.div>
                 )}
               </div>
 
@@ -222,12 +277,27 @@ const ProductDetail = () => {
               </p>
 
               {/* Specs / Features */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="p-4 rounded-xl bg-gray-50 border border-gray-100 flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center text-green-600">
-                    <Check size={18} strokeWidth={3} />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className={`p-4 rounded-xl border flex items-center gap-3 ${
+                  product.stock === 0 ? 'bg-red-50 border-red-100' : 'bg-green-50 border-green-100'
+                }`}>
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                    product.stock === 0 ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'
+                  }`}>
+                    {product.stock === 0 ? <X size={18} strokeWidth={3} /> : <Check size={18} strokeWidth={3} />}
                   </div>
-                  <span className="text-sm font-bold text-gray-700">In Stock Ready</span>
+                  <div>
+                    <span className={`text-sm font-bold block ${
+                      product.stock === 0 ? 'text-red-700' : 'text-green-700'
+                    }`}>
+                      {product.stock === 0 ? 'Out of Stock' : 'In Stock Ready'}
+                    </span>
+                    {product.stock > 0 && product.stock < 10 && (
+                      <span className="text-[10px] font-black text-orange-600 uppercase">
+                        ⚡ Only {product.stock} left at this price!
+                      </span>
+                    )}
+                  </div>
                 </div>
                 <div className="p-4 rounded-xl bg-gray-50 border border-gray-100 flex items-center gap-3">
                   <div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center text-orange-600">
@@ -261,9 +331,12 @@ const ProductDetail = () => {
                 <div className="flex gap-4">
                   <button
                     onClick={handleAddToCart}
-                    className="flex-1 btn-primary py-5 rounded-2xl flex items-center justify-center gap-3 text-xl shadow-xl shadow-orange-200"
+                    disabled={product.stock === 0}
+                    className={`flex-1 btn-primary py-5 rounded-2xl flex items-center justify-center gap-3 text-xl shadow-xl shadow-orange-200 ${
+                      product.stock === 0 ? 'opacity-50 cursor-not-allowed bg-gray-400 shadow-none' : ''
+                    }`}
                   >
-                    <ShoppingCart size={24} /> Add to Cart
+                    <ShoppingCart size={24} /> {product.stock === 0 ? 'Out of Stock' : 'Add to Cart'}
                   </button>
                   <button
                     onClick={handleWishlist}
@@ -306,7 +379,114 @@ const ProductDetail = () => {
 
             {/* Review List */}
             <div className="lg:w-2/3">
-              <h3 className="text-3xl font-black text-gray-900 mb-8">Customer Reviews</h3>
+              <div className="flex items-center justify-between mb-8">
+                <h3 className="text-3xl font-black text-gray-900">Customer Reviews</h3>
+                <div className="flex items-center gap-2 px-4 py-2 bg-orange-50 text-orange-600 rounded-full text-xs font-black uppercase tracking-widest border border-orange-100">
+                  <Sparkles size={14} /> AI Powered
+                </div>
+              </div>
+
+              {/* AI Analysis Summary Box */}
+              {reviewAnalysis && reviews.length > 0 && (
+                <motion.div 
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="mb-12 bg-gradient-to-br from-orange-50/50 to-white border border-orange-100 rounded-[2.5rem] p-8 shadow-xl shadow-orange-50/20 relative overflow-hidden"
+                >
+                  <div className="absolute -top-10 -right-10 opacity-5">
+                    <Sparkles size={200} className="text-orange-600" />
+                  </div>
+                  
+                  <div className="relative z-10">
+                    <div className="flex items-center gap-3 mb-8">
+                      <div className="w-12 h-12 bg-orange-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-orange-200">
+                        <Sparkles size={24} />
+                      </div>
+                      <div>
+                        <h4 className="text-xl font-black text-gray-900 tracking-tight">AI Review Summary</h4>
+                        <div className={`inline-flex items-center gap-1.5 mt-1 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest ${
+                          reviewAnalysis.sentiment === 'Positive' ? 'bg-green-100 text-green-700' : 
+                          reviewAnalysis.sentiment === 'Negative' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'
+                        }`}>
+                          {reviewAnalysis.sentiment} Sentiment {reviewAnalysis.sentiment === 'Positive' ? '😊' : reviewAnalysis.sentiment === 'Negative' ? '😡' : '😐'}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+                      {/* Left: Summary & Highlights */}
+                      <div className="space-y-8">
+                        <p className="text-lg font-bold text-gray-800 leading-relaxed italic">
+                          "{reviewAnalysis.summary}"
+                        </p>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <div className="space-y-3">
+                            <h5 className="flex items-center gap-2 font-black text-[10px] text-green-600 uppercase tracking-widest">
+                              <ThumbsUp size={14} /> Most people liked
+                            </h5>
+                            <div className="flex flex-wrap gap-2">
+                              {reviewAnalysis.pros?.map((pro, i) => (
+                                <span key={i} className="px-3 py-1.5 bg-white text-green-700 rounded-xl text-xs font-black border border-green-100 shadow-sm">
+                                  {pro}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+
+                          <div className="space-y-3">
+                            <h5 className="flex items-center gap-2 font-black text-[10px] text-red-500 uppercase tracking-widest">
+                              <ThumbsDown size={14} /> Some complained
+                            </h5>
+                            <div className="flex flex-wrap gap-2">
+                              {reviewAnalysis.cons?.map((con, i) => (
+                                <span key={i} className="px-3 py-1.5 bg-white text-red-600 rounded-xl text-xs font-black border border-red-100 shadow-sm">
+                                  {con}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Right: Rating Breakdown */}
+                      <div className="bg-white/50 backdrop-blur-sm p-6 rounded-3xl border border-orange-50">
+                        <h5 className="font-black text-[10px] text-gray-400 uppercase tracking-widest mb-6">Rating Breakdown</h5>
+                        <div className="space-y-4">
+                          {ratingBreakdown.map((item) => (
+                            <div key={item.star} className="flex items-center gap-4">
+                              <div className="flex items-center gap-1 w-12">
+                                <span className="text-xs font-black text-gray-700">{item.star}</span>
+                                <Star size={12} className="text-yellow-400" fill="currentColor" />
+                              </div>
+                              <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
+                                <motion.div 
+                                  initial={{ width: 0 }}
+                                  animate={{ width: `${item.percentage}%` }}
+                                  transition={{ duration: 1, ease: "easeOut" }}
+                                  className="h-full bg-orange-500 rounded-full"
+                                />
+                              </div>
+                              <span className="text-[10px] font-bold text-gray-400 w-8">{item.count}</span>
+                            </div>
+                          ))}
+                        </div>
+                        <div className="mt-6 pt-6 border-t border-gray-50 flex items-center justify-between">
+                          <div className="text-center">
+                            <p className="text-2xl font-black text-gray-900">{product.rating || 4.5}</p>
+                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">Avg Rating</p>
+                          </div>
+                          <div className="text-center">
+                            <p className="text-2xl font-black text-gray-900">{reviews.length}</p>
+                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">Total Reviews</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+
               {reviews.length === 0 ? (
                 <div className="text-gray-500 font-medium py-8">No reviews yet. Be the first to review this product!</div>
               ) : (

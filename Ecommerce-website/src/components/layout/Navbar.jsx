@@ -1,16 +1,18 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
-import { ShoppingCart, Heart, User, Search, Menu, X, LogOut, ChevronDown, LayoutDashboard } from 'lucide-react';
+import { ShoppingCart, Heart, User, Search, Menu, X, LogOut, ChevronDown, LayoutDashboard, Bell, CheckCircle2, Info, AlertTriangle, Sparkles } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { logout } from '../../redux/slices/authSlice';
 import { fetchCart } from '../../redux/slices/cartSlice';
 import { fetchWishlist } from '../../redux/slices/wishlistSlice';
+import { fetchNotifications, markAsRead, markAllAsRead } from '../../redux/slices/notificationSlice';
 
 import axiosInstance from '../../services/api/axiosInstance';
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [isCategoriesOpen, setIsCategoriesOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [suggestions, setSuggestions] = useState([]);
@@ -18,6 +20,7 @@ const Navbar = () => {
   const { user, token } = useSelector((state) => state.auth);
   const { totalQuantity } = useSelector((state) => state.cart);
   const { items: wishlistItems } = useSelector((state) => state.wishlist);
+  const { notifications, unreadCount } = useSelector((state) => state.notifications);
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
@@ -25,6 +28,14 @@ const Navbar = () => {
     if (token) {
       dispatch(fetchCart());
       dispatch(fetchWishlist());
+      dispatch(fetchNotifications());
+
+      // AI Polling: Check for new notifications every 30 seconds
+      const interval = setInterval(() => {
+        dispatch(fetchNotifications());
+      }, 30000);
+
+      return () => clearInterval(interval);
     }
   }, [dispatch, token]);
 
@@ -165,6 +176,85 @@ const Navbar = () => {
                 </span>
               )}
             </Link>
+
+            {/* Notification Bell */}
+            <div className="relative">
+              <button 
+                onClick={() => {
+                  setIsNotifOpen(!isNotifOpen);
+                  setIsDropdownOpen(false);
+                }}
+                className={`relative text-gray-600 hover:text-[#ff6b01] transition-colors ${unreadCount > 0 ? 'animate-bounce-subtle' : ''}`}
+              >
+                <Bell size={22} />
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1.5 -right-1.5 bg-red-600 text-white text-[8px] font-bold w-4 h-4 rounded-full flex items-center justify-center animate-pulse">
+                    {unreadCount}
+                  </span>
+                )}
+              </button>
+
+              {/* Notification Dropdown */}
+              {isNotifOpen && (
+                <div className="absolute right-0 mt-4 w-80 bg-white rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] border border-gray-100 overflow-hidden z-[100] animate-in fade-in slide-in-from-top-2">
+                  <div className="p-5 border-b border-gray-50 flex items-center justify-between bg-gray-50/50">
+                    <h3 className="text-sm font-black text-gray-900 uppercase tracking-widest flex items-center gap-2">
+                      Notifications <Sparkles size={14} className="text-orange-500" />
+                    </h3>
+                    <button 
+                      onClick={() => dispatch(markAllAsRead())}
+                      className="text-[10px] font-black text-orange-600 uppercase tracking-tighter hover:underline"
+                    >
+                      Clear All
+                    </button>
+                  </div>
+                  <div className="max-h-96 overflow-y-auto custom-scrollbar">
+                    {notifications.length > 0 ? (
+                      notifications.map((notif) => (
+                        <div 
+                          key={notif._id}
+                          onClick={() => {
+                            dispatch(markAsRead(notif._id));
+                            if (notif.link) navigate(notif.link);
+                            setIsNotifOpen(false);
+                          }}
+                          className={`p-5 border-b border-gray-50 hover:bg-orange-50 transition-all cursor-pointer flex gap-4 ${!notif.isRead ? 'bg-orange-50/30' : ''}`}
+                        >
+                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+                            notif.type === 'price_drop' ? 'bg-green-100 text-green-600' :
+                            notif.type === 'stock_alert' ? 'bg-red-100 text-red-600' : 'bg-blue-100 text-blue-600'
+                          }`}>
+                            {notif.type === 'price_drop' ? <CheckCircle2 size={18} /> :
+                             notif.type === 'stock_alert' ? <AlertTriangle size={18} /> : <Info size={18} />}
+                          </div>
+                          <div>
+                            <p className="text-xs font-black text-gray-900 leading-tight mb-1">{notif.title}</p>
+                            <p className="text-[10px] text-gray-500 font-medium leading-relaxed">{notif.message}</p>
+                            <p className="text-[9px] text-gray-400 font-bold mt-2 uppercase tracking-widest">
+                              {new Date(notif.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </p>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="p-10 text-center">
+                        <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center text-gray-200 mx-auto mb-3">
+                          <Bell size={24} />
+                        </div>
+                        <p className="text-xs text-gray-400 font-bold italic">No new notifications</p>
+                      </div>
+                    )}
+                  </div>
+                  <Link 
+                    to="/profile" 
+                    className="block w-full p-4 bg-gray-50 text-center text-[10px] font-black text-gray-400 uppercase tracking-widest hover:bg-orange-600 hover:text-white transition-all"
+                    onClick={() => setIsNotifOpen(false)}
+                  >
+                    View All Activity
+                  </Link>
+                </div>
+              )}
+            </div>
 
             <Link to="/cart" className="relative text-gray-600 hover:text-[#ff6b01] transition-colors">
               <ShoppingCart size={22} />

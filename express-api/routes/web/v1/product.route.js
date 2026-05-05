@@ -31,6 +31,20 @@ router.get(
   productController.smartSearch
 );
 
+router.get(
+  "/admin/inventory-insights",
+  userMiddleware.authUser,
+  adminMiddleware.authAdmin,
+  productController.getInventoryInsights
+);
+
+router.post(
+  "/generate-description",
+  userMiddleware.authUser,
+  adminMiddleware.authAdmin,
+  productController.generateDescription
+);
+
 // Recommendations -- must be before /:id
 router.get(
   "/recommendations/:id",
@@ -64,6 +78,11 @@ router.delete(
 router.get(
   "/:id/reviews",
   productController.getProductReviews
+);
+
+router.get(
+  "/:id/review-analysis",
+  productController.getReviewAnalysis
 );
 
 router.post(

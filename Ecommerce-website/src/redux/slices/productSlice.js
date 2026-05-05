@@ -116,7 +116,10 @@ const productSlice = createSlice({
             ...rawProduct,
             id: rawProduct._id || rawProduct.id,
             image: rawProduct.images?.[0] || 'https://placehold.co/400x400?text=No+Image',
-            isNew: rawProduct.isNewproduct
+            isNew: rawProduct.isNewproduct,
+            dynamicPrice: action.payload?.dynamicPrice,
+            priceStatus: action.payload?.priceStatus,
+            urgencyMessage: action.payload?.urgencyMessage
           };
         } else {
           state.product = null;

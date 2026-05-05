@@ -21,6 +21,11 @@ module.exports.CreateOrder = async ({ userId, items, shippingAddress, paymentMet
     const itemsTotal = product.price * item.quantity;
     totalAmount += itemsTotal;
 
+    // Update Stock and Sold Quantity (Smart Inventory AI)
+    product.stock = Math.max(0, (product.stock || 0) - item.quantity);
+    product.soldQuantity = (product.soldQuantity || 0) + item.quantity;
+    await product.save();
+
     orderItems.push({
       productId: product._id,
       name: product.name,

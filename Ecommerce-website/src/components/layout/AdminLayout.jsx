@@ -18,7 +18,8 @@ import {
   Search,
   LogOut,
   ChevronRight,
-  Mail
+  Mail,
+  Box
 } from 'lucide-react';
 import { useSelector, useDispatch } from 'react-redux';
 import { logout } from '../../redux/slices/authSlice';
@@ -37,6 +38,7 @@ const AdminLayout = () => {
     { icon: <Users size={20} />, label: 'Users', path: '/admin/users' },
     { icon: <CreditCard size={20} />, label: 'Payments', path: '/admin/payments' },
     { icon: <Truck size={20} />, label: 'Shipping', path: '/admin/shipping' },
+    { icon: <Box size={20} />, label: 'Inventory AI', path: '/admin/inventory' },
     { icon: <Star size={20} />, label: 'Reviews', path: '/admin/reviews' },
     { icon: <Gift size={20} />, label: 'Offers', path: '/admin/offers' },
     { icon: <BarChart3 size={20} />, label: 'Reports', path: '/admin/reports' },

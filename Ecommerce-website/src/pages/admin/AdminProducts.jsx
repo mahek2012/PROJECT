@@ -9,6 +9,8 @@ import { fetchProducts, createProduct, updateProduct, deleteProduct } from '../.
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-toastify';
 import Papa from 'papaparse';
+import axiosInstance from '../../services/api/axiosInstance';
+import { Sparkles } from 'lucide-react';
 
 const CATEGORIES = [
   'All',
@@ -48,6 +50,7 @@ const AdminProducts = () => {
   const [activeCategory, setActiveCategory] = useState('All');
   const [isCatMenuOpen, setIsCatMenuOpen]   = useState(false);
   const [isSubmitting, setIsSubmitting]     = useState(false);
+  const [isGenerating, setIsGenerating]     = useState(false);
 
   // Advanced Fields State
   const [images, setImages] = useState(['']);
@@ -191,6 +194,34 @@ const AdminProducts = () => {
       toast.error(error || 'Failed to save product');
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleGenerateDescription = async () => {
+    const form = document.querySelector('form');
+    const name = form.name.value;
+    const category = form.category.value;
+    const brand = form.brand.value;
+
+    if (!name || !category) {
+      toast.warning('Please enter product name and category first! ⚠️');
+      return;
+    }
+
+    try {
+      setIsGenerating(true);
+      const res = await axiosInstance.post('/products/generate-description', { name, category, brand });
+      if (res.data?.success) {
+        const textarea = document.querySelector('textarea[name="description"]');
+        if (textarea) {
+          textarea.value = res.data.description;
+          toast.success('Description generated! 🤖✨');
+        }
+      }
+    } catch (err) {
+      toast.error('AI Generation failed. ❌');
+    } finally {
+      setIsGenerating(false);
     }
   };
 
@@ -520,7 +551,21 @@ const AdminProducts = () => {
 
                 {/* Description */}
                 <div className="space-y-4">
-                  <label className="text-xs font-black text-gray-400 uppercase tracking-widest">Full Description</label>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="text-xs font-black text-gray-400 uppercase tracking-widest">Full Description</label>
+                    <button 
+                      type="button" 
+                      onClick={handleGenerateDescription}
+                      disabled={isGenerating}
+                      className="flex items-center gap-2 px-4 py-2 bg-orange-50 text-orange-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-orange-100 transition-all disabled:opacity-50"
+                    >
+                      {isGenerating ? (
+                        <>Generating...</>
+                      ) : (
+                        <><Sparkles size={14} /> Generate with AI</>
+                      )}
+                    </button>
+                  </div>
                   <textarea name="description" rows={5} defaultValue={editingProduct?.description} required className="w-full bg-gray-50 border-none rounded-[2rem] px-8 py-6 font-bold text-gray-700 focus:ring-2 focus:ring-orange-500 resize-none" placeholder="Elaborate on features, specifications, and what makes this product special..."></textarea>
                 </div>
 
